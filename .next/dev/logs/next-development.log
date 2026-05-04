@@ -2784,3 +2784,103 @@ https://nextjs.org/docs/messages/module-not-found
 [45:58:55.643] Browser WARN    As of March 1st, 2025, google.maps.places.AutocompleteService is not available to new customers. Please use google.maps.places.AutocompleteSuggestion instead. At this time, google.maps.places.AutocompleteService is not scheduled to be discontinued, but google.maps.places.AutocompleteSuggestion is recommended over google.maps.places.AutocompleteService. While google.maps.places.AutocompleteService will continue to receive bug fixes for any major regressions, existing bugs in google.maps.places.AutocompleteService will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/legacy for additional details and https://developers.google.com/maps/documentation/javascript/places-migration-overview for the migration guide.
 [45:58:55.643] Browser WARN    As of March 1st, 2025, google.maps.places.AutocompleteService is not available to new customers. Please use google.maps.places.AutocompleteSuggestion instead. At this time, google.maps.places.AutocompleteService is not scheduled to be discontinued, but google.maps.places.AutocompleteSuggestion is recommended over google.maps.places.AutocompleteService. While google.maps.places.AutocompleteService will continue to receive bug fixes for any major regressions, existing bugs in google.maps.places.AutocompleteService will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/legacy for additional details and https://developers.google.com/maps/documentation/javascript/places-migration-overview for the migration guide.
 [45:58:55.643] Browser WARN    You may test your Stripe.js integration over HTTP. However, live Stripe.js integrations must use HTTPS.
+[47:19:05.341] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.490] Server  LOG      ✓ Compiled in 1726ms
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:05.544] Browser ERROR   Failed to fetch RSC payload for http://localhost:3000/screens. Falling back to browser navigation. {}
+[47:19:07.478] Browser ERROR   A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <tbody>
+      ...
+        <MenuProvider scope={{Menu:[...], ...}} onClose={function Menu.useCallback} isUsingKeyboardRef={{current:false}} ...>
+          <DropdownMenuTrigger asChild={true}>
+            <DropdownMenuTrigger data-slot="dropdown-m..." asChild={true}>
+              <MenuAnchor asChild={true} __scopeMenu={{Menu:[...], ...}}>
+                <PopperAnchor __scopePopper={{Menu:[...], ...}} asChild={true} ref={null}>
+                  <Primitive.div asChild={true} ref={function}>
+                    <Primitive.div.Slot ref={function}>
+                      <Primitive.div.SlotClone ref={function}>
+                        <Primitive.button type="button" id="radix-_R_e..." aria-haspopup="menu" aria-expanded={false} ...>
+                          <Primitive.button.Slot type="button" id="radix-_R_e..." aria-haspopup="menu" ...>
+                            <Primitive.button.SlotClone type="button" id="radix-_R_e..." aria-haspopup="menu" ...>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" type="button" id="radix-_R_e..." ...>
+                                <button
+                                  data-slot="dropdown-menu-trigger"
+                                  data-variant="ghost"
+                                  data-size="sm"
+                                  className={"inline-flex items-center justify-center whitespace-nowrap text-sm font-..."}
+                                  type="button"
++                                 id="radix-_R_edainebn9tb_"
+-                                 id="radix-_R_1plaatpet7lb_"
+                                  aria-haspopup="menu"
+                                  aria-expanded={false}
+                                  aria-controls={undefined}
+                                  data-state="closed"
+                                  data-disabled={undefined}
+                                  disabled={false}
+                                  onPointerDown={function handleEvent}
+                                  onKeyDown={function handleEvent}
+                                  ref={function}
+                                >
+          ...
+      ...
+        <MenuProvider scope={{Menu:[...], ...}} onClose={function Menu.useCallback} isUsingKeyboardRef={{current:false}} ...>
+          <DropdownMenuTrigger asChild={true}>
+            <DropdownMenuTrigger data-slot="dropdown-m..." asChild={true}>
+              <MenuAnchor asChild={true} __scopeMenu={{Menu:[...], ...}}>
+                <PopperAnchor __scopePopper={{Menu:[...], ...}} asChild={true} ref={null}>
+                  <Primitive.div asChild={true} ref={function}>
+                    <Primitive.div.Slot ref={function}>
+                      <Primitive.div.SlotClone ref={function}>
+                        <Primitive.button type="button" id="radix-_R_e..." aria-haspopup="menu" aria-expanded={false} ...>
+                          <Primitive.button.Slot type="button" id="radix-_R_e..." aria-haspopup="menu" ...>
+                            <Primitive.button.SlotClone type="button" id="radix-_R_e..." aria-haspopup="menu" ...>
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" type="button" id="radix-_R_e..." ...>
+                                <button
+                                  data-slot="dropdown-menu-trigger"
+                                  data-variant="ghost"
+                                  data-size="sm"
+                                  className={"inline-flex items-center justify-center whitespace-nowrap text-sm font-..."}
+                                  type="button"
++                                 id="radix-_R_elainebn9tb_"
+-                                 id="radix-_R_1qlaatpet7lb_"
+                                  aria-haspopup="menu"
+                                  aria-expanded={false}
+                                  aria-controls={undefined}
+                                  data-state="closed"
+                                  data-disabled={undefined}
+                                  disabled={false}
+                                  onPointerDown={function handleEvent}
+                                  onKeyDown={function handleEvent}
+                                  ref={function}
+                                >
+          ...
+
+[47:19:07.478] Browser WARN    As of March 1st, 2025, google.maps.places.AutocompleteService is not available to new customers. Please use google.maps.places.AutocompleteSuggestion instead. At this time, google.maps.places.AutocompleteService is not scheduled to be discontinued, but google.maps.places.AutocompleteSuggestion is recommended over google.maps.places.AutocompleteService. While google.maps.places.AutocompleteService will continue to receive bug fixes for any major regressions, existing bugs in google.maps.places.AutocompleteService will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/legacy for additional details and https://developers.google.com/maps/documentation/javascript/places-migration-overview for the migration guide.
+[47:19:07.478] Browser WARN    As of March 1st, 2025, google.maps.places.AutocompleteService is not available to new customers. Please use google.maps.places.AutocompleteSuggestion instead. At this time, google.maps.places.AutocompleteService is not scheduled to be discontinued, but google.maps.places.AutocompleteSuggestion is recommended over google.maps.places.AutocompleteService. While google.maps.places.AutocompleteService will continue to receive bug fixes for any major regressions, existing bugs in google.maps.places.AutocompleteService will not be addressed. At least 12 months notice will be given before support is discontinued. Please see https://developers.google.com/maps/legacy for additional details and https://developers.google.com/maps/documentation/javascript/places-migration-overview for the migration guide.
+[47:19:07.478] Browser WARN    Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview
+[47:19:07.478] Browser WARN    You may test your Stripe.js integration over HTTP. However, live Stripe.js integrations must use HTTPS.
+[47:20:18.345] Server  LOG        Reload env: .env.local
+[47:20:33.876] Server  LOG      ✓ Compiled in 53ms
+[47:22:01.235] Server  LOG        Reload env: .env.local

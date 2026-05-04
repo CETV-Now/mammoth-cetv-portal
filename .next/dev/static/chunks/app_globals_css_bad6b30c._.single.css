@@ -648,6 +648,10 @@
     overflow: hidden;
   }
 
+  .block {
+    display: block;
+  }
+
   .flex {
     display: flex;
   }

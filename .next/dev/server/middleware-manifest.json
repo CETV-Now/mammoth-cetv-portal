@@ -3,12 +3,13 @@
   "middleware": {
     "/": {
       "files": [
-        "server/edge/chunks/_9f2a1028._.js",
+        "server/edge/chunks/_9ff89aae._.js",
+        "server/edge/chunks/node_modules_@opentelemetry_api_build_esm_4557a825._.js",
         "server/edge/chunks/node_modules_@clerk_99aee81e._.js",
         "server/edge/chunks/node_modules_@clerk_backend_dist_d242d8fc._.js",
         "server/edge/chunks/node_modules_@clerk_nextjs_dist_esm_2b92463c._.js",
         "server/edge/chunks/[root-of-the-server]__f2b15f93._.js",
-        "server/edge/chunks/turbopack-edge-wrapper_e4b5db7b.js"
+        "server/edge/chunks/turbopack-edge-wrapper_1433ec35.js"
       ],
       "name": "middleware",
       "page": "/",

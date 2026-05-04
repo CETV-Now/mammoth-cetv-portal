@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { tasks } from "@trigger.dev/sdk/v3";
 import clientPromise from "@/lib/mongodb";
 
 export async function GET() {
@@ -51,5 +52,21 @@ export async function POST(req: Request) {
     updated_at: now,
   });
 
-  return Response.json({ _id: result.insertedId.toString() });
+  const layoutId = result.insertedId.toString();
+
+  // Fire-and-forget — don't block the save response if Trigger.dev is unavailable
+  tasks
+    .trigger("layout-html-generator", {
+      screenLayout: {
+        _id: layoutId,
+        template,
+        name,
+        description: description ?? "",
+        account_id: user.account_id.toString(),
+        zone_data,
+      },
+    })
+    .catch((err) => console.error("[layout-html-generator] trigger failed:", err));
+
+  return Response.json({ _id: layoutId });
 }
