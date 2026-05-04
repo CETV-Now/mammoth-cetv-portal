@@ -1,0 +1,10 @@
+var R=require("../../../../chunks/[turbopack]_runtime.js")("server/app/api/onboarding/ad-mode/route.js")
+R.c("server/chunks/node_modules_48ef6895._.js")
+R.c("server/chunks/node_modules_next_9eb5565f._.js")
+R.c("server/chunks/node_modules_@clerk_5b256a95._.js")
+R.c("server/chunks/node_modules_@clerk_backend_dist_30bf3994._.js")
+R.c("server/chunks/node_modules_@clerk_nextjs_dist_esm_2a5d084e._.js")
+R.c("server/chunks/[root-of-the-server]__36969af4._.js")
+R.c("server/chunks/_next-internal_server_app_api_onboarding_ad-mode_route_actions_ac3bea7c.js")
+R.m("[project]/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/app/api/onboarding/ad-mode/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)")
+module.exports=R.m("[project]/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/app/api/onboarding/ad-mode/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)").exports

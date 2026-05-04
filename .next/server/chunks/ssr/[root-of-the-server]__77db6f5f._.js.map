@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../../../app/layout/page.tsx"],"sourcesContent":["export default function LayoutPage() {\n  return <div />;\n}\n"],"names":[],"mappings":"qVAAe,SAAS,IACtB,MAAO,CAAA,EAAA,EAAA,GAAA,EAAC,MAAA,CAAA,EACV"}

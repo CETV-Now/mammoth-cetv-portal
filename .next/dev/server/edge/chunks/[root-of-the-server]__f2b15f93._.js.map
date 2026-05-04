@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 16, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/middleware.ts"],"sourcesContent":["import { clerkMiddleware, createRouteMatcher } from \"@clerk/nextjs/server\";\nimport type { NextRequest, NextFetchEvent } from \"next/server\";\n\nconst isPublicRoute = createRouteMatcher([\n  \"/sign-in(.*)\",\n  \"/sign-up(.*)\",\n  \"/api/webhooks/clerk(.*)\",\n]);\n\nconst clerk = clerkMiddleware(async (auth, req) => {\n  if (!isPublicRoute(req)) {\n    await auth.protect();\n  }\n});\n\nexport default function middleware(request: NextRequest, event: NextFetchEvent) {\n  return clerk(request, event);\n}\n\nexport const config = {\n  matcher: [\n    \"/((?!_next|[^?]*\\\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)\",\n    \"/(api|trpc)(.*)\",\n  ],\n};\n"],"names":[],"mappings":";;;;;;AAAA;AAAA;;AAGA,MAAM,gBAAgB,IAAA,wMAAkB,EAAC;IACvC;IACA;IACA;CACD;AAED,MAAM,QAAQ,IAAA,wMAAe,EAAC,OAAO,MAAM;IACzC,IAAI,CAAC,cAAc,MAAM;QACvB,MAAM,KAAK,OAAO;IACpB;AACF;AAEe,SAAS,WAAW,OAAoB,EAAE,KAAqB;IAC5E,OAAO,MAAM,SAAS;AACxB;AAEO,MAAM,SAAS;IACpB,SAAS;QACP;QACA;KACD;AACH"}}]
+}

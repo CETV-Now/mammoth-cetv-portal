@@ -1,0 +1,18 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/onboarding/ad-mode/route": "/api/onboarding/ad-mode",
+  "/api/onboarding/channels/route": "/api/onboarding/channels",
+  "/api/onboarding/location-data/route": "/api/onboarding/location-data",
+  "/api/onboarding/location/route": "/api/onboarding/location",
+  "/api/onboarding/order/route": "/api/onboarding/order",
+  "/api/webhooks/clerk/route": "/api/webhooks/clerk",
+  "/content/page": "/content",
+  "/dashboard/page": "/dashboard",
+  "/layout/page": "/layout",
+  "/onboarding/page": "/onboarding",
+  "/page": "/",
+  "/screens/page": "/screens",
+  "/sign-in/[[...sign-in]]/page": "/sign-in/[[...sign-in]]",
+  "/sign-up/[[...sign-up]]/page": "/sign-up/[[...sign-up]]"
+}
