@@ -50,6 +50,8 @@ export async function POST(req: Request) {
     return new Response("Invalid signature", { status: 400 });
   }
 
+  console.log("[clerk webhook] Event type:", event.type);
+
   if (event.type !== "user.created") {
     return new Response("OK", { status: 200 });
   }
@@ -59,11 +61,16 @@ export async function POST(req: Request) {
   const lastName = last_name ?? "";
   const email = email_addresses[0]?.email_address ?? "";
 
+  console.log("[clerk webhook] Processing user.created for:", clerkUserId, email);
+
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB);
 
+  console.log("[clerk webhook] Connected to DB:", process.env.MONGODB_DB);
+
   const existing = await db.collection("users").findOne({ clerk_user_id: clerkUserId });
   if (existing) {
+    console.log("[clerk webhook] User already exists, skipping:", clerkUserId);
     return new Response("OK", { status: 200 });
   }
 
@@ -81,6 +88,8 @@ export async function POST(req: Request) {
       updated_at: now,
     });
 
+    console.log("[clerk webhook] Account created:", accountId.toString());
+
     await db.collection("users").insertOne({
       account_id: accountId,
       clerk_user_id: clerkUserId,
@@ -91,6 +100,8 @@ export async function POST(req: Request) {
       created_at: now,
       updated_at: now,
     });
+
+    console.log("[clerk webhook] User created for:", clerkUserId);
   } catch (err) {
     console.error("[clerk webhook] DB write error:", err);
     return new Response("Internal server error", { status: 500 });
