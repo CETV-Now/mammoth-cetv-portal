@@ -169,6 +169,7 @@
     --color-green-800: #016630;
     --color-blue-600: #155dfc;
     --color-blue-700: #1447e6;
+    --color-neutral-800: #262626;
     --color-black: #000;
     --color-white: #fff;
     --spacing: .25rem;
@@ -228,6 +229,7 @@
       --color-green-800: lab(37.4616% -36.7971 22.9692);
       --color-blue-600: lab(44.0605% 29.0279 -86.0352);
       --color-blue-700: lab(36.9089% 35.0961 -85.6872);
+      --color-neutral-800: lab(15.204% 0 -.00000596046);
     }
   }
 }
@@ -583,10 +585,6 @@
 
   .top-\[50\%\] {
     top: 50%;
-  }
-
-  .top-full {
-    top: 100%;
   }
 
   .right-0 {
@@ -1155,14 +1153,6 @@
     scroll-margin-block: calc(var(--spacing) * 1);
   }
 
-  .list-inside {
-    list-style-position: inside;
-  }
-
-  .list-disc {
-    list-style-type: disc;
-  }
-
   .grid-cols-1 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
@@ -1424,16 +1414,16 @@
     background-color: #cbd5e1;
   }
 
-  .bg-\[\#fde68a\] {
-    background-color: #fde68a;
-  }
-
   .bg-accent {
     background-color: var(--accent);
   }
 
   .bg-background {
     background-color: var(--background);
+  }
+
+  .bg-black {
+    background-color: var(--color-black);
   }
 
   .bg-black\/40 {
@@ -1588,6 +1578,10 @@
 
   .fill-foreground {
     fill: var(--foreground);
+  }
+
+  .object-contain {
+    object-fit: contain;
   }
 
   .object-cover {
@@ -2126,11 +2120,6 @@
     transition-duration: .2s;
   }
 
-  .duration-500 {
-    --tw-duration: .5s;
-    transition-duration: .5s;
-  }
-
   .ease-in-out {
     --tw-ease: var(--ease-in-out);
     transition-timing-function: var(--ease-in-out);
@@ -2157,10 +2146,6 @@
 
   .zoom-in-95 {
     --tw-enter-scale: .95;
-  }
-
-  .fade-in {
-    --tw-enter-opacity: 0;
   }
 
   .group-focus-within\/menu-item\:opacity-100:is(:where(.group\/menu-item):focus-within *) {
@@ -2518,6 +2503,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-neutral-800:hover {
+      background-color: var(--color-neutral-800);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-primary\/80:hover {
       background-color: var(--primary);
     }
@@ -2733,10 +2724,6 @@
 
   .disabled\:cursor-not-allowed:disabled {
     cursor: not-allowed;
-  }
-
-  .disabled\:opacity-30:disabled {
-    opacity: .3;
   }
 
   .disabled\:opacity-50:disabled {
@@ -3040,12 +3027,6 @@
   @media (min-width: 40rem) {
     .sm\:max-w-lg {
       max-width: var(--container-lg);
-    }
-  }
-
-  @media (min-width: 40rem) {
-    .sm\:max-w-md {
-      max-width: var(--container-md);
     }
   }
 

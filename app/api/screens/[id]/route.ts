@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { tasks } from "@trigger.dev/sdk/v3";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 
@@ -62,6 +63,14 @@ export async function PATCH(
   }
 
   await db.collection("screens").updateOne({ _id: screenId }, { $set: update });
+
+  // Fire refresh-screen when a playlist or layout assignment changes (not on deletion)
+  const isAssignmentChange = ("playlist_id" in body || "layout_id" in body) && !("status" in body);
+  if (isAssignmentChange) {
+    tasks
+      .trigger("refresh-screen", { screenId: id })
+      .catch((err) => console.error("[refresh-screen] trigger failed:", err));
+  }
 
   return Response.json({ success: true });
 }

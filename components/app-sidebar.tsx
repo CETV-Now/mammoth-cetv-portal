@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Monitor, Library, Layout, ListVideo, Tv, TvMinimalPlay } from "lucide-react";
+import { Monitor, Library, Layout, ListVideo, Tv } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -76,8 +77,8 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <TvMinimalPlay className="size-4" />
+                <div className="flex size-8 items-center justify-center shrink-0">
+                  <Image src="/cetv_logo.png" alt="CETV" width={32} height={32} className="rounded-lg object-contain" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">CETV Portal</span>

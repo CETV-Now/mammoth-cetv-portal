@@ -56,16 +56,7 @@ export async function POST(req: Request) {
 
   // Fire-and-forget — don't block the save response if Trigger.dev is unavailable
   tasks
-    .trigger("layout-html-generator", {
-      screenLayout: {
-        _id: layoutId,
-        template,
-        name,
-        description: description ?? "",
-        account_id: user.account_id.toString(),
-        zone_data,
-      },
-    })
+    .trigger("layout-html-generator", { screenLayoutId: layoutId })
     .catch((err) => console.error("[layout-html-generator] trigger failed:", err));
 
   return Response.json({ _id: layoutId });
