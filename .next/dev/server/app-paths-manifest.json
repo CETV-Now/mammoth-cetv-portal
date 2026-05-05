@@ -1,13 +1,5 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/layouts/route": "app/api/layouts/route.js",
-  "/api/screens/[id]/route": "app/api/screens/[id]/route.js",
-  "/channels/page": "app/channels/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/layouts/page": "app/layouts/page.js",
-  "/onboarding/page": "app/onboarding/page.js",
-  "/page": "app/page.js",
-  "/playlists/page": "app/playlists/page.js",
-  "/screens/page": "app/screens/page.js",
-  "/sign-in/[[...sign-in]]/page": "app/sign-in/[[...sign-in]]/page.js"
+  "/account/page": "app/account/page.js",
+  "/content/page": "app/content/page.js",
+  "/screens/page": "app/screens/page.js"
 }

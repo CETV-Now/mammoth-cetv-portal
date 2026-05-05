@@ -1,0 +1,52 @@
+import { auth, clerkClient } from "@clerk/nextjs/server";
+import clientPromise from "@/lib/mongodb";
+
+export async function PATCH(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const { firstName, lastName, companyName, phone, website, industry } = body;
+
+  if (!firstName || !lastName || !companyName || !phone || !website) {
+    return Response.json(
+      { error: "firstName, lastName, companyName, phone, and website are required" },
+      { status: 400 }
+    );
+  }
+
+  const client = await clientPromise;
+  const db = client.db(process.env.MONGODB_DB);
+
+  const user = await db.collection("users").findOne({ clerk_user_id: userId });
+  if (!user) {
+    return Response.json({ error: "User not found" }, { status: 404 });
+  }
+
+  const now = new Date();
+
+  const clerk = await clerkClient();
+  await clerk.users.updateUser(userId, { firstName, lastName });
+
+  await db.collection("users").updateOne(
+    { clerk_user_id: userId },
+    { $set: { first_name: firstName, last_name: lastName, updated_at: now } }
+  );
+
+  await db.collection("accounts").updateOne(
+    { _id: user.account_id },
+    {
+      $set: {
+        companyName,
+        phone,
+        website,
+        industry: industry || null,
+        updated_at: now,
+      },
+    }
+  );
+
+  return Response.json({ success: true });
+}

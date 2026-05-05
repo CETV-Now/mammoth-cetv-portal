@@ -68,7 +68,7 @@ export async function POST(req: Request) {
 
   await db.collection("accounts").updateOne(
     { _id: user.account_id },
-    { $set: { onboardingStep: 2, updated_at: now } }
+    { $set: { onboardingStep: 3, updated_at: now } }
   );
 
     return Response.json({ locationId: locationId.toString(), screenId: newScreen.insertedId.toString() }, { status: 201 });

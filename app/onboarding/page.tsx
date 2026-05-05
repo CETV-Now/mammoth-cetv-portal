@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import clientPromise from "@/lib/mongodb";
 import { OnboardingWizard } from "./components/onboarding-wizard";
@@ -34,6 +34,9 @@ export default async function OnboardingPage() {
     redirect("/dashboard");
   }
 
+  const clerk = await clerkClient();
+  const clerkUser = await clerk.users.getUser(userId);
+
   const step = account.onboardingStep ?? 1;
   const serializedAccount = {
     _id: account._id.toString(),
@@ -42,5 +45,12 @@ export default async function OnboardingPage() {
     onboardingComplete: account.onboardingComplete ?? false,
   };
 
-  return <OnboardingWizard step={step} account={serializedAccount} />;
+  return (
+    <OnboardingWizard
+      step={step}
+      account={serializedAccount}
+      firstName={clerkUser.firstName ?? ""}
+      lastName={clerkUser.lastName ?? ""}
+    />
+  );
 }

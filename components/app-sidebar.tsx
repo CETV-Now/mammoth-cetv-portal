@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Monitor, Library, Layout, ListVideo, Tv } from "lucide-react";
+import { Monitor, Library, Layout, ListVideo, Tv, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,7 +9,6 @@ import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -17,9 +16,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
-import { UserButton } from "@clerk/nextjs";
 import { LucideIcon } from "lucide-react";
 
 interface MenuItem {
@@ -64,27 +61,34 @@ const navigationGroups: NavigationGroup[] = [
       },
     ],
   },
+  {
+    title: "Settings",
+    items: [
+      {
+        title: "My Account",
+        url: "/account",
+        icon: User,
+      },
+    ],
+  },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { state } = useSidebar();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
-                <div className="flex size-8 items-center justify-center shrink-0">
-                  <Image src="/cetv_logo.png" alt="CETV" width={32} height={32} className="rounded-lg object-contain" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">CETV Portal</span>
-                  <span className="text-xs text-muted-foreground">Self-Service</span>
-                </div>
-              </Link>
+            <SidebarMenuButton size="lg">
+              <div className="flex size-8 items-center justify-center shrink-0">
+                <Image src="/cetv_logo.png" alt="CETV" width={32} height={32} className="rounded-lg object-contain" />
+              </div>
+              <div className="flex flex-col gap-0.5 leading-none">
+                <span className="font-semibold">CETV Now!</span>
+                <span className="text-xs text-muted-foreground">v. 1.0.0</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -110,16 +114,6 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              <UserButton afterSignOutUrl="/sign-in" />
-              {state === "expanded" && <span className="text-sm text-muted-foreground">Account</span>}
-            </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }

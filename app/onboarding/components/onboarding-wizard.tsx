@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { StepAbout } from "./step-about";
 import { StepLocation } from "./step-location";
-import { StepAdMode } from "./step-ad-mode";
 import { StepDeviceOrder } from "./step-device-order";
 
 interface Account {
@@ -15,15 +15,17 @@ interface Account {
 interface OnboardingWizardProps {
   step: number;
   account: Account;
+  firstName: string;
+  lastName: string;
 }
 
 const STEP_LABELS = [
+  "About You",
   "Add Location",
-  "Ad Serving Mode",
   "Order Device",
 ];
 
-export function OnboardingWizard({ step: initialStep, account }: OnboardingWizardProps) {
+export function OnboardingWizard({ step: initialStep, account, firstName, lastName }: OnboardingWizardProps) {
   const [step, setStep] = useState(initialStep);
   const [screenId, setScreenId] = useState<string | null>(null);
 
@@ -41,7 +43,7 @@ export function OnboardingWizard({ step: initialStep, account }: OnboardingWizar
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Welcome to CETV Portal</h1>
-          <p className="text-muted-foreground mt-1">Let's get your location set up.</p>
+          <p className="text-muted-foreground mt-1">Let's get your account set up.</p>
         </div>
 
         <div className="flex items-center justify-center mb-10 gap-2">
@@ -76,8 +78,8 @@ export function OnboardingWizard({ step: initialStep, account }: OnboardingWizar
         </div>
 
         <div className="bg-card rounded-xl border shadow p-6">
-          {step === 1 && <StepLocation onComplete={completeLocation} />}
-          {step === 2 && <StepAdMode onComplete={advance} />}
+          {step === 1 && <StepAbout onComplete={advance} firstName={firstName} lastName={lastName} />}
+          {step === 2 && <StepLocation onComplete={completeLocation} />}
           {step === 3 && <StepDeviceOrder />}
         </div>
       </div>

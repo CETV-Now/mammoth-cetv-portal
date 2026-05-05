@@ -18,6 +18,7 @@ const routeNames: Record<string, string> = {
   "/channels": "Channels",
   "/playlists": "Playlists",
   "/dashboard": "Dashboard",
+  "/account": "My Account",
 };
 
 function getPageName(pathname: string | null): string {
