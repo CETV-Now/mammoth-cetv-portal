@@ -29,7 +29,14 @@ export async function POST(req: Request) {
   }
 
   const body = await req.text();
-  const wh = new Webhook(webhookSecret);
+
+  let wh: InstanceType<typeof Webhook>;
+  try {
+    wh = new Webhook(webhookSecret);
+  } catch (err) {
+    console.error("[clerk webhook] Invalid webhook secret:", err);
+    return new Response("Invalid webhook secret", { status: 500 });
+  }
 
   let event: ClerkUserCreatedEvent;
   try {
@@ -38,7 +45,8 @@ export async function POST(req: Request) {
       "svix-timestamp": svixTimestamp,
       "svix-signature": svixSignature,
     }) as ClerkUserCreatedEvent;
-  } catch {
+  } catch (err) {
+    console.error("[clerk webhook] Signature verification failed:", err);
     return new Response("Invalid signature", { status: 400 });
   }
 
