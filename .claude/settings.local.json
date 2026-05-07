@@ -4,7 +4,8 @@
       "Bash(mkdir -p \"/Users/ben/Documents/cetv-now/mammoth-stack/mammoth-cetv-portal/app/sign-in/[[...sign-in]]\")",
       "Bash(mkdir -p \"/Users/ben/Documents/cetv-now/mammoth-stack/mammoth-cetv-portal/app/sign-up/[[...sign-up]]\")",
       "Bash(npm install *)",
-      "Bash(npx shadcn@latest *)"
+      "Bash(npx shadcn@latest *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

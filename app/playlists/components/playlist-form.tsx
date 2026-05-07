@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GripVertical, HelpCircle, ImageIcon, Trash2, Tv } from "lucide-react";
+import { Clock, GripVertical, HelpCircle, ImageIcon, Trash2, Tv, VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -30,6 +30,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,12 +51,47 @@ export interface Screen {
   assigned_playlist_name?: string;
 }
 
+export interface DayPart {
+  days: string[];
+  start: string;
+  end: string;
+}
+
 export interface PlaylistData {
   _id: string;
   name: string;
-  content: Array<{ id: string | null; name: string }>;
+  content: Array<{ id: string | null; name: string; day_part?: DayPart | null }>;
   channels: Array<{ id: string | null; name: string }>;
 }
+
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+type Day = (typeof DAYS)[number];
+
+const DAY_FULL_NAMES: Record<Day, string> = {
+  Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday",
+  Fri: "Friday", Sat: "Saturday", Sun: "Sunday",
+};
+
+const DAY_SHORT_MAP: Record<string, Day> = {
+  Monday: "Mon", Tuesday: "Tue", Wednesday: "Wed", Thursday: "Thu",
+  Friday: "Fri", Saturday: "Sat", Sunday: "Sun",
+};
+
+interface Schedule {
+  always: boolean;
+  allDay: boolean;
+  startTime: string;
+  endTime: string;
+  days: Day[];
+}
+
+const DEFAULT_SCHEDULE: Schedule = {
+  always: true,
+  allDay: true,
+  startTime: "08:00",
+  endTime: "20:00",
+  days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+};
 
 interface PlaylistItem {
   localKey: string;
@@ -63,6 +99,7 @@ interface PlaylistItem {
   name: string;
   url?: string;
   mime_type?: string;
+  schedule?: Schedule;
 }
 
 interface ChannelItem {
@@ -96,8 +133,17 @@ export function PlaylistForm({
         id: item.id ?? "",
         name: item.name,
         url: item.id ? content.find((c) => c._id === item.id)?.url : undefined,
-        mime_type: item.id
-          ? content.find((c) => c._id === item.id)?.mime_type
+        mime_type: item.id ? content.find((c) => c._id === item.id)?.mime_type : undefined,
+        schedule: item.day_part
+          ? {
+              always: false,
+              allDay: item.day_part.start === "00:00" && item.day_part.end === "23:59",
+              startTime: item.day_part.start,
+              endTime: item.day_part.end,
+              days: item.day_part.days
+                .map((d) => DAY_SHORT_MAP[d])
+                .filter((d): d is Day => d !== undefined),
+            }
           : undefined,
       }))
   );
@@ -108,7 +154,24 @@ export function PlaylistForm({
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [channelPickerOpen, setChannelPickerOpen] = React.useState(false);
   const [channelHelpOpen, setChannelHelpOpen] = React.useState(false);
+  const [schedulingKey, setSchedulingKey] = React.useState<string | null>(null);
+  const [scheduleWarningOpen, setScheduleWarningOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+
+  const schedulingItem = schedulingKey
+    ? playlistItems.find((i) => i.localKey === schedulingKey) ?? null
+    : null;
+
+  function openSchedule(localKey: string) {
+    setSchedulingKey(localKey);
+  }
+
+  function handleScheduleSave(localKey: string, schedule: Schedule) {
+    setPlaylistItems((prev) =>
+      prev.map((i) => (i.localKey === localKey ? { ...i, schedule } : i))
+    );
+    setSchedulingKey(null);
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -128,20 +191,17 @@ export function PlaylistForm({
     }
   }
 
-  function handleContentAdd(selectedIds: string[]) {
+  function handleContentAdd(selectedItems: ContentItem[]) {
     const existingIds = new Set(playlistItems.map((p) => p.id));
-    const newItems = selectedIds
-      .filter((id) => !existingIds.has(id))
-      .map((id) => {
-        const c = content.find((c) => c._id === id)!;
-        return {
-          localKey: crypto.randomUUID(),
-          id: c._id,
-          name: c.name,
-          url: c.url,
-          mime_type: c.mime_type,
-        };
-      });
+    const newItems = selectedItems
+      .filter((item) => !existingIds.has(item._id))
+      .map((item) => ({
+        localKey: crypto.randomUUID(),
+        id: item._id,
+        name: item.name,
+        url: item.url,
+        mime_type: item.mime_type,
+      }));
     setPlaylistItems((prev) => [...prev, ...newItems]);
   }
 
@@ -177,6 +237,11 @@ export function PlaylistForm({
       toast.error("Add at least one content item to the playlist");
       return;
     }
+    const hasAlwaysItem = playlistItems.some((i) => !i.schedule || i.schedule.always);
+    if (!hasAlwaysItem) {
+      setScheduleWarningOpen(true);
+      return;
+    }
 
     setSaving(true);
     try {
@@ -189,7 +254,17 @@ export function PlaylistForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          content: playlistItems.map(({ id, name }) => ({ id, name })),
+          content: playlistItems.map(({ id, name, schedule }) => ({
+            id,
+            name,
+            day_part: schedule && !schedule.always
+              ? {
+                  days: schedule.days.map((d) => DAY_FULL_NAMES[d]),
+                  start: schedule.allDay ? "00:00" : schedule.startTime,
+                  end: schedule.allDay ? "23:59" : schedule.endTime,
+                }
+              : null,
+          })),
           channels: channelItems.map(({ id, name }) => ({ id: id || null, name })),
           screen_ids: selectedScreenIds,
         }),
@@ -231,7 +306,7 @@ export function PlaylistForm({
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <Label>Content</Label>
-            <p className="text-xs text-muted-foreground">Add your uploaded images and videos. There is no limit on the number of items you can add but each playlist must have at least one item.</p>
+            <p className="text-xs text-muted-foreground">Add your uploaded images and videos. There is no limit on the number of items you can add but each playlist must have at least one item. You can schedule each content item to play on certain days and times.</p>
           </div>
           <Button
             type="button"
@@ -258,6 +333,7 @@ export function PlaylistForm({
                       key={item.localKey}
                       item={item}
                       onRemove={() => removePlaylistItem(item.localKey)}
+                      onSchedule={() => openSchedule(item.localKey)}
                     />
                   ))}
                 </div>
@@ -386,6 +462,28 @@ export function PlaylistForm({
           </p>
         </DialogContent>
       </Dialog>
+
+      {schedulingItem && (
+        <ScheduleDialog
+          item={schedulingItem}
+          onClose={() => setSchedulingKey(null)}
+          onSave={(schedule) => handleScheduleSave(schedulingItem.localKey, schedule)}
+        />
+      )}
+
+      <Dialog open={scheduleWarningOpen} onOpenChange={setScheduleWarningOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Schedule conflict</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            All playlists must have at least one content item that is set to &ldquo;Always play&rdquo;. This will prevent your screen from being blank.
+          </p>
+          <DialogFooter>
+            <Button onClick={() => setScheduleWarningOpen(false)}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -393,9 +491,10 @@ export function PlaylistForm({
 interface SortablePlaylistItemProps {
   item: PlaylistItem;
   onRemove: () => void;
+  onSchedule: () => void;
 }
 
-function SortablePlaylistItem({ item, onRemove }: SortablePlaylistItemProps) {
+function SortablePlaylistItem({ item, onRemove, onSchedule }: SortablePlaylistItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.localKey });
 
@@ -404,6 +503,8 @@ function SortablePlaylistItem({ item, onRemove }: SortablePlaylistItemProps) {
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const hasSchedule = item.schedule && !item.schedule.always;
 
   return (
     <div
@@ -428,6 +529,18 @@ function SortablePlaylistItem({ item, onRemove }: SortablePlaylistItemProps) {
 
       <button
         type="button"
+        onClick={onSchedule}
+        title={hasSchedule ? "Edit schedule" : "Set schedule"}
+        className={`transition-colors shrink-0 ${
+          hasSchedule ? "text-green-500" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <Clock className="size-4" />
+        <span className="sr-only">Schedule</span>
+      </button>
+
+      <button
+        type="button"
         onClick={onRemove}
         className="text-muted-foreground hover:text-destructive transition-colors"
       >
@@ -435,6 +548,157 @@ function SortablePlaylistItem({ item, onRemove }: SortablePlaylistItemProps) {
         <span className="sr-only">Remove</span>
       </button>
     </div>
+  );
+}
+
+interface ScheduleDialogProps {
+  item: PlaylistItem;
+  onClose: () => void;
+  onSave: (schedule: Schedule) => void;
+}
+
+function ScheduleDialog({ item, onClose, onSave }: ScheduleDialogProps) {
+  const initial = item.schedule ?? DEFAULT_SCHEDULE;
+  const [always, setAlways] = React.useState(initial.always);
+  const [allDay, setAllDay] = React.useState(initial.allDay);
+  const [startTime, setStartTime] = React.useState(initial.startTime);
+  const [endTime, setEndTime] = React.useState(initial.endTime);
+  const [days, setDays] = React.useState<Day[]>(initial.days);
+
+  function toggleDay(day: Day) {
+    setDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  }
+
+  function handleSave() {
+    onSave({ always, allDay, startTime, endTime, days });
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Schedule</DialogTitle>
+          <p className="text-sm text-muted-foreground truncate">{item.name}</p>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-5 py-1">
+          {/* Always / Custom radio */}
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="radio"
+                name="schedule-type"
+                checked={always}
+                onChange={() => setAlways(true)}
+                className="accent-primary"
+              />
+              <span className="text-sm font-medium">Always play</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="radio"
+                name="schedule-type"
+                checked={!always}
+                onChange={() => setAlways(false)}
+                className="accent-primary"
+              />
+              <span className="text-sm font-medium">Custom schedule</span>
+            </label>
+          </div>
+
+          {/* Custom schedule options */}
+          {!always && (
+            <div className="flex flex-col gap-4">
+              {/* Days */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs">Days</Label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {DAYS.map((day) => {
+                    const active = days.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleDay(day)}
+                        className={`text-xs px-2.5 py-1 rounded-md border font-medium transition-colors ${
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-muted-foreground border-input hover:border-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* All day / Specific hours toggle */}
+              <div className="flex flex-col gap-2">
+                <Label className="text-xs">Time</Label>
+                <div className="flex rounded-md border overflow-hidden w-fit">
+                  <button
+                    type="button"
+                    onClick={() => setAllDay(true)}
+                    className={`text-xs px-3 py-1.5 font-medium transition-colors ${
+                      allDay
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    All day
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllDay(false)}
+                    className={`text-xs px-3 py-1.5 font-medium transition-colors border-l ${
+                      !allDay
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Specific hours
+                  </button>
+                </div>
+              </div>
+
+              {/* Time inputs */}
+              {!allDay && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="start-time" className="text-xs">Start time</Label>
+                    <Input
+                      id="start-time"
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="end-time" className="text-xs">End time</Label>
+                    <Input
+                      id="end-time"
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave}>Apply</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -457,16 +721,11 @@ function ContentThumbnail({ url, mime_type, name }: ContentThumbnailProps) {
       />
     );
   }
-  if (isVideo && url) {
+  if (isVideo) {
     return (
-      <video
-        src={url}
-        className="absolute inset-0 h-full w-full object-cover"
-        controls={false}
-        autoPlay={false}
-        preload="metadata"
-        muted
-      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <VideoIcon className="size-4 text-muted-foreground" />
+      </div>
     );
   }
   return (

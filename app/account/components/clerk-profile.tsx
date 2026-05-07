@@ -2,10 +2,10 @@
 
 import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { Shield } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 
 export function ClerkProfile() {
-  const { openUserProfile } = useClerk();
+  const { openUserProfile, signOut } = useClerk();
 
   return (
     <div className="bg-card rounded-xl border shadow-sm p-6 mt-12">
@@ -13,10 +13,16 @@ export function ClerkProfile() {
       <p className="text-sm text-muted-foreground mt-1 mb-5">
         Update your avatar, password, connected accounts, and security settings.
       </p>
-      <Button variant="outline" onClick={() => openUserProfile()}>
-        <Shield className="size-4" />
-        Manage Account
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={() => signOut()}>
+          <LogOut className="size-4" />
+          Logout
+        </Button>
+        <Button variant="outline" onClick={() => openUserProfile()}>
+          <Shield className="size-4" />
+          Manage Account
+        </Button>
+      </div>
     </div>
   );
 }

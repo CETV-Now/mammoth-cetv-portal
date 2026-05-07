@@ -78,9 +78,10 @@ export async function POST(req: Request) {
   const now = new Date();
 
   const contentItems = (content ?? []).map(
-    (item: { id: string; name: string }) => ({
+    (item: { id: string; name: string; day_part?: { days: string[]; start: string; end: string } | null }) => ({
       id: new ObjectId(item.id),
       name: item.name,
+      day_part: item.day_part ?? null,
     })
   );
 

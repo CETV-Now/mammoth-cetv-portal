@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { Webhook } from "svix";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
+import { tasks } from "@trigger.dev/sdk";
 
 interface ClerkUserCreatedEvent {
   type: "user.created";
@@ -106,6 +107,10 @@ export async function POST(req: Request) {
     console.error("[clerk webhook] DB write error:", err);
     return new Response("Internal server error", { status: 500 });
   }
+
+  tasks.trigger("sync-mako", {}).catch((err) =>
+    console.error("[clerk webhook] syncMako trigger failed:", err)
+  );
 
   return new Response("OK", { status: 200 });
 }

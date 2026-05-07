@@ -1,5 +1,6 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import clientPromise from "@/lib/mongodb";
+import { tasks } from "@trigger.dev/sdk";
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -44,6 +45,10 @@ export async function POST(req: Request) {
   await db.collection("accounts").updateOne(
     { _id: user.account_id },
     { $set: accountUpdate }
+  );
+
+  tasks.trigger("sync-mako", {}).catch((err) =>
+    console.error("[onboarding/profile] syncMako trigger failed:", err)
   );
 
   return Response.json({ success: true });

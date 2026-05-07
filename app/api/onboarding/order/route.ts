@@ -2,6 +2,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 import { stripe } from "@/lib/stripe";
+import { tasks } from "@trigger.dev/sdk";
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -88,6 +89,10 @@ export async function POST(req: Request) {
   await clerk.users.updateUserMetadata(userId, {
     publicMetadata: { onboardingComplete: true },
   });
+
+  tasks.trigger("sync-mako", {}).catch((err) =>
+    console.error("[onboarding/order] syncMako trigger failed:", err)
+  );
 
   return Response.json({ success: true });
 }

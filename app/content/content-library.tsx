@@ -88,14 +88,9 @@ function ContentCard({ item, onArchive }: ContentCardProps) {
           />
         )}
         {isVideo && (
-          <video
-            src={item.url}
-            className="absolute inset-0 h-full w-full object-cover"
-            controls={false}
-            autoPlay={false}
-            preload="metadata"
-            muted
-          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <VideoIcon className="size-8 text-muted-foreground" />
+          </div>
         )}
         {!isImage && !isVideo && (
           <div className="absolute inset-0 flex items-center justify-center">

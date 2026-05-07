@@ -41,6 +41,7 @@ export default async function EditPlaylistPage({
     content: (rawPlaylist.content ?? []).map((item: any) => ({
       id: item.id ? item.id.toString() : null,
       name: item.name,
+      day_part: item.day_part ?? null,
     })),
     channels: (rawPlaylist.channels ?? []).map((item: any) => ({
       id: item.id ? item.id.toString() : null,
