@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ export interface ScreenRow {
   status: string;
   connected: boolean;
   ad_serving_mode: string;
+  audio_enabled: boolean;
   playlist_id: string | null;
   playlist_name: string | null;
   layout_id: string | null;
@@ -134,13 +136,21 @@ function LocationSection({
         {group.location_name}
       </button>
       <div className="rounded-md border">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
+          <colgroup>
+            <col className="w-72" />
+            <col className="w-24" />
+            <col className="w-24" />
+            <col className="w-56" />
+            <col className="w-56" />
+            <col className="w-10" />
+          </colgroup>
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Screen Name</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Connected</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Ad Serving</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Layout</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Playlist</th>
               <th className="px-4 py-3 text-right font-medium text-muted-foreground"></th>
             </tr>
@@ -171,15 +181,15 @@ function LocationSection({
 function ScreenRow({ screen, isLast }: { screen: ScreenRow; isLast: boolean }) {
   return (
     <tr className={isLast ? "" : "border-b"}>
-      <td className="px-4 py-3 font-medium">{screen.screen_name}</td>
+      <td className="px-4 py-3 font-medium truncate">{screen.screen_name}</td>
       <td className="px-4 py-3">
         <StatusBadge status={screen.status} />
       </td>
       <td className="px-4 py-3">
         <ConnectedBadge connected={screen.connected} />
       </td>
-      <td className="px-4 py-3 text-muted-foreground">
-        {screen.ad_serving_mode === "ad-free" ? "Ad Free" : "Ad Supported"}
+      <td className="px-4 py-3 text-muted-foreground truncate">
+        {screen.layout_name ?? <span className="text-muted-foreground/50">—</span>}
       </td>
       <td className="px-4 py-3">
         {screen.playlist_id && screen.playlist_name ? (
@@ -214,11 +224,26 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
   const [setPlaylistOpen, setSetPlaylistOpen] = React.useState(false);
   const [setLayoutOpen, setSetLayoutOpen] = React.useState(false);
   const [pin, setPin] = React.useState("");
+  const [installCode, setInstallCode] = React.useState<string | null>(null);
+  const [installCodeLoading, setInstallCodeLoading] = React.useState(false);
 
   function handleInstallOpenChange(open: boolean) {
     setInstallOpen(open);
-    if (!open) setPin("");
+    if (!open) {
+      setPin("");
+      setInstallCode(null);
+    }
   }
+
+  React.useEffect(() => {
+    if (!installOpen) return;
+    setInstallCodeLoading(true);
+    fetch(`/api/screens/${screen._id}`)
+      .then((r) => r.json())
+      .then((data) => setInstallCode(data.installCode ?? null))
+      .catch(() => setInstallCode(null))
+      .finally(() => setInstallCodeLoading(false));
+  }, [installOpen, screen._id]);
 
   return (
     <>
@@ -230,38 +255,50 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {screen.status === "new" && (
+            <DropdownMenuItem onSelect={() => setInstallOpen(true)} className="text-green-600 focus:text-green-600">Activate</DropdownMenuItem>
+          )}
           <DropdownMenuItem onSelect={() => setDetailsOpen(true)}>Screen Details</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setSetPlaylistOpen(true)}>Set Playlist</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setSetLayoutOpen(true)}>Set Layout</DropdownMenuItem>
-          {screen.status === "new" && (
-            <DropdownMenuItem onSelect={() => setInstallOpen(true)}>Install</DropdownMenuItem>
-          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
       <Dialog open={installOpen} onOpenChange={handleInstallOpenChange}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Install Screen</DialogTitle>
+            <DialogTitle>Activate Screen</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4 text-sm text-muted-foreground">
-            <p>
-              To install a screen, enter the 4-digit PIN displayed on the screen and click{" "}
-              <span className="font-medium text-foreground">Install</span>, or use your phone
-              to scan the QR code and follow the instructions.
-            </p>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="install-pin" className="text-foreground">PIN</Label>
-              <Input
-                id="install-pin"
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="0000"
-                maxLength={4}
-                className="text-center text-lg tracking-widest font-mono"
-              />
+          <div className="flex flex-col gap-5">
+            <p className="text-sm text-muted-foreground">There are two ways to activate your screen.</p>
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-3 text-sm">
+                <p className="text-foreground">Scan the QR code on your screen. When prompted, enter the code below:</p>
+                <p className="font-bold text-foreground text-2xl tracking-widest font-mono text-center">
+                  {installCodeLoading ? "..." : (installCode ?? "—")}
+                </p>
+                <Button variant="outline" className="w-full" onClick={() => handleInstallOpenChange(false)}>Done</Button>
+              </div>
+              <div className="relative flex items-center">
+                <div className="flex-1 h-px bg-border" />
+                <span className="px-3 text-xs text-muted-foreground">or:</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <div className="flex flex-col gap-3 text-sm">
+                <p className="text-foreground">Enter the 4 digit PIN displayed on the screen and click activate:</p>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    id="install-pin"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="0000"
+                    maxLength={4}
+                    className="text-center text-lg tracking-widest font-mono"
+                  />
+                </div>
+                <Button disabled={pin.length !== 4} className="w-full">Activate</Button>
+              </div>
             </div>
-            <Button disabled={pin.length !== 4} className="w-full">Install</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -507,10 +544,6 @@ function ScreenDetailsModal({
               </div>
               <div className="flex flex-col gap-1 pt-1 text-sm text-muted-foreground">
                 <span>
-                  <span className="font-medium text-foreground">Ad Serving:</span>{" "}
-                  {screen.ad_serving_mode === "ad-free" ? "Ad Free" : "Ad Supported"}
-                </span>
-                <span>
                   <span className="font-medium text-foreground">Playlist:</span>{" "}
                   {screen.playlist_id && screen.playlist_name ? (
                     <Link
@@ -538,6 +571,10 @@ function ScreenDetailsModal({
                   >
                     <Copy className="size-3.5" />
                   </button>
+                </span>
+                <span>
+                  <span className="font-medium text-foreground">Sound Enabled:</span>{" "}
+                  {screen.audio_enabled ? "True" : "False"}
                 </span>
               </div>
             </CardContent>
@@ -731,6 +768,7 @@ function AddScreenModal({
   } | null>(null);
   const [isAddressSelected, setIsAddressSelected] = React.useState(false);
   const [mapsReady, setMapsReady] = React.useState(false);
+  const [audioEnabled, setAudioEnabled] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   // order step state
   const [createdScreenId, setCreatedScreenId] = React.useState("");
@@ -766,6 +804,7 @@ function AddScreenModal({
       setCreatedScreenId("");
       setCreatedLocationId("");
       setShippingAddress({ line1: "", city: "", state: "", zip: "" });
+      setAudioEnabled(false);
     }
   }, [open]);
 
@@ -826,7 +865,7 @@ function AddScreenModal({
         const res = await fetch("/api/screens", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ location_id: locationId, screen_name: screenName.trim() }),
+          body: JSON.stringify({ location_id: locationId, screen_name: screenName.trim(), audio_enabled: audioEnabled }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -843,7 +882,7 @@ function AddScreenModal({
           setShippingAddress({ line1: locData.address ?? "", city: locData.city ?? "", state: locData.state ?? "", zip: locData.zip ?? "" });
         }
       } else {
-        const body: Record<string, unknown> = { name: locName.trim(), screen_name: screenName.trim() };
+        const body: Record<string, unknown> = { name: locName.trim(), screen_name: screenName.trim(), audio_enabled: audioEnabled };
         if (addressData) {
           body.address = addressData.address;
           body.city = addressData.city;
@@ -960,6 +999,15 @@ function AddScreenModal({
               <div className="flex flex-col gap-2">
                 <Label>Screen Name</Label>
                 <Input value={screenName} onChange={(e) => setScreenName(e.target.value)} placeholder="e.g. Screen 1" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="audio-enabled"
+                  checked={audioEnabled}
+                  onCheckedChange={(v) => setAudioEnabled(!!v)}
+                />
+                <Label htmlFor="audio-enabled">Does this screen have sound?</Label>
               </div>
             </div>
             <div className="flex gap-2 justify-end pt-1">

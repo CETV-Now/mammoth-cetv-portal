@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
+import { generateInstallCode } from "@/lib/installCode";
 
 export async function GET() {
   const { userId } = await auth();
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { location_id, screen_name } = body;
+  const { location_id, screen_name, audio_enabled } = body;
 
   if (!location_id) {
     return Response.json({ error: "location_id is required" }, { status: 400 });
@@ -85,6 +86,7 @@ export async function POST(req: Request) {
 
   const now = new Date();
   const cetvNetworkId = new ObjectId(process.env.CETV_NETWORK_ID);
+  const installCode = await generateInstallCode(db);
 
   const newScreen = await db.collection("screens").insertOne({
     account_id: account._id,
@@ -102,6 +104,8 @@ export async function POST(req: Request) {
     ad_serving_mode: "ad-supported",
     layout_id: null,
     playlist_id: null,
+    installCode,
+    audio_enabled: audio_enabled === true,
     created_at: now,
     updated_at: now,
     tag: "CETVNEWTESTING",

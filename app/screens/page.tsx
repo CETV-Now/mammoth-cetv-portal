@@ -85,6 +85,7 @@ export default async function ScreensPageRoute() {
       status: s.status ?? "new",
       connected: s.connected ?? false,
       ad_serving_mode: s.ad_serving_mode ?? "ad-supported",
+      audio_enabled: s.audio_enabled === true,
       playlist_id: s.playlist_id ? s.playlist_id.toString() : null,
       playlist_name: s.playlist_id ? (playlistNameMap[s.playlist_id.toString()] ?? null) : null,
       layout_id: s.layout_id ? s.layout_id.toString() : null,

@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { tasks } from "@trigger.dev/sdk";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 
@@ -81,6 +82,12 @@ export async function POST(req: Request) {
     created_at: now,
     updated_at: now,
   });
+
+  if (mimeType === "video/mp4") {
+    tasks
+      .trigger("transcode-user-content", { id: result.insertedId.toString() })
+      .catch((err) => console.error("[transcode-user-content] trigger failed:", err));
+  }
 
   return Response.json({
     _id: result.insertedId.toString(),

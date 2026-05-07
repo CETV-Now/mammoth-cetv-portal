@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ export function StepLocation({ onComplete }: { onComplete: (screenId: string) =>
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [addressData, setAddressData] = useState<AddressData | null>(null);
   const [isAddressSelected, setIsAddressSelected] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mapsReady, setMapsReady] = useState(false);
   const autocompleteRef = useRef<google.maps.places.AutocompleteService | null>(null);
@@ -114,6 +116,7 @@ export function StepLocation({ onComplete }: { onComplete: (screenId: string) =>
           name: locationName.trim(),
           ...addressData,
           geo_point: { type: "Point", coordinates: [addressData.long, addressData.lat] },
+          audio_enabled: audioEnabled,
         }),
       });
 
@@ -182,6 +185,15 @@ export function StepLocation({ onComplete }: { onComplete: (screenId: string) =>
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="audio-enabled"
+          checked={audioEnabled}
+          onCheckedChange={(v) => setAudioEnabled(!!v)}
+        />
+        <Label htmlFor="audio-enabled">Does this screen have sound?</Label>
       </div>
 
       <Button type="submit" className="w-full" disabled={isSubmitting || !mapsReady}>

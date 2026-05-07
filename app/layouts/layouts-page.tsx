@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { MoreHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const templateLabels: Record<string, string> = {
   "two-zone-vertical": "Two Zone Vertical",
@@ -18,8 +26,17 @@ interface LayoutRow {
   screensAssigned: number;
 }
 
-export function LayoutsPage({ layouts }: { layouts: LayoutRow[] }) {
+export function LayoutsPage({ layouts: initial }: { layouts: LayoutRow[] }) {
   const router = useRouter();
+  const [layouts, setLayouts] = React.useState(initial);
+
+  React.useEffect(() => {
+    setLayouts(initial);
+  }, [initial]);
+
+  function handleDeleted(id: string) {
+    setLayouts((prev) => prev.filter((l) => l._id !== id));
+  }
 
   return (
     <div className="flex flex-col gap-6 pt-4">
@@ -48,6 +65,7 @@ export function LayoutsPage({ layouts }: { layouts: LayoutRow[] }) {
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Template</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Description</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Screens Assigned</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground"></th>
               </tr>
             </thead>
             <tbody>
@@ -61,6 +79,9 @@ export function LayoutsPage({ layouts }: { layouts: LayoutRow[] }) {
                     {layout.description || <span className="italic">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">{layout.screensAssigned}</td>
+                  <td className="px-4 py-3 text-right">
+                    <LayoutMenu layout={layout} onDeleted={handleDeleted} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -68,5 +89,58 @@ export function LayoutsPage({ layouts }: { layouts: LayoutRow[] }) {
         </div>
       )}
     </div>
+  );
+}
+
+function LayoutMenu({
+  layout,
+  onDeleted,
+}: {
+  layout: LayoutRow;
+  onDeleted: (id: string) => void;
+}) {
+  const router = useRouter();
+  const [deleting, setDeleting] = React.useState(false);
+  const isAssigned = layout.screensAssigned > 0;
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/layouts/${layout._id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to delete layout");
+      }
+      toast.success("Layout deleted");
+      onDeleted(layout._id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={deleting}>
+          <MoreHorizontal className="size-4" />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => router.push(`/layouts/${layout._id}/edit`)}>
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={handleDelete}
+          disabled={isAssigned}
+          className="text-destructive focus:text-destructive"
+          title={isAssigned ? "Remove this layout from all screens before deleting" : undefined}
+        >
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

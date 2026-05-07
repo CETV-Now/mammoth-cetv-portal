@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
+import { generateInstallCode } from "@/lib/installCode";
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -9,7 +10,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { name, screen_name, address, city, state, zip, lat, long, geo_point } = body;
+  const { name, screen_name, address, city, state, zip, lat, long, geo_point, audio_enabled } = body;
 
   if (!name) {
     return Response.json({ error: "Location name is required" }, { status: 400 });
@@ -55,6 +56,7 @@ export async function POST(req: Request) {
 
   const newLocation = await db.collection("locations").insertOne(locationDoc);
   const locationId = newLocation.insertedId;
+  const installCode = await generateInstallCode(db);
 
   const newScreen = await db.collection("screens").insertOne({
     account_id: account._id,
@@ -72,6 +74,8 @@ export async function POST(req: Request) {
     ad_serving_mode: "ad-supported",
     layout_id: null,
     playlist_id: null,
+    installCode,
+    audio_enabled: audio_enabled === true,
     created_at: now,
     updated_at: now,
     tag: "CETVNEWTESTING",

@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
+import { generateInstallCode } from "@/lib/installCode";
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -9,7 +10,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { name, address, city, state, zip, lat, long, geo_point } = body;
+  const { name, address, city, state, zip, lat, long, geo_point, audio_enabled } = body;
 
   if (!name || !address) {
     return Response.json({ error: "Name and address are required" }, { status: 400 });
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
 
   const now = new Date();
   const cetvNetworkId = new ObjectId(process.env.CETV_NETWORK_ID);
+  const installCode = await generateInstallCode(db);
 
   try {
   const newLocation = await db.collection("locations").insertOne({
@@ -61,6 +63,8 @@ export async function POST(req: Request) {
     ad_serving_mode: "ad-supported",
     layout_id: null,
     playlist_id: null,
+    installCode,
+    audio_enabled: audio_enabled === true,
     created_at: now,
     updated_at: now,
     tag: "CETVNEWTESTING"
