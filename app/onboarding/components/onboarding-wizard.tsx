@@ -41,9 +41,9 @@ export function OnboardingWizard({ step: initialStep, account, firstName, lastNa
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Welcome to CETV Portal</h1>
-          <p className="text-muted-foreground mt-1">Let's get your account set up.</p>
+        <div className="mb-8 text-center flex flex-col items-center gap-3">
+          <img src="/cetv_logo.png" alt="CETV Now" className="h-16 w-auto" />
+          <p className="text-muted-foreground">Welcome to CETV Now! Let's get your account set up.</p>
         </div>
 
         <div className="flex items-center justify-center mb-10 gap-2">
