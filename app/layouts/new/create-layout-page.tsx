@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ImageIcon, Plus, Trash2, Type } from "lucide-react";
+import { AlertTriangle, ImageIcon, Plus, Trash2, Type } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -451,15 +451,30 @@ const FIVE_ZONE_IMAGE_SPEC: ImageSpec = {
 
 function FiveZoneImageUpload({ image, onImageChange }: { image: File | null; onImageChange: (f: File | null) => void }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const [dimensionWarning, setDimensionWarning] = React.useState(false);
+
+  function handleFileSelect(file: File | null) {
+    setDimensionWarning(false);
+    onImageChange(file);
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      if (img.naturalWidth !== 450 || img.naturalHeight !== 170) setDimensionWarning(true);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  }
 
   return (
-    <div>
+    <div className="flex flex-col gap-3">
       <input
         ref={inputRef}
         type="file"
         accept=".jpg,.jpeg,.png"
         className="hidden"
-        onChange={(e) => onImageChange(e.target.files?.[0] ?? null)}
+        onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
       />
       {image ? (
         <div className={cn("relative rounded-md border overflow-hidden bg-muted group w-48", FIVE_ZONE_IMAGE_SPEC.aspectClass)}>
@@ -470,7 +485,7 @@ function FiveZoneImageUpload({ image, onImageChange }: { image: File | null; onI
           />
           <button
             type="button"
-            onClick={() => onImageChange(null)}
+            onClick={() => { onImageChange(null); setDimensionWarning(false); }}
             className="absolute top-1 right-1 rounded-full bg-black/60 p-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <Trash2 className="size-3" />
@@ -488,6 +503,12 @@ function FiveZoneImageUpload({ image, onImageChange }: { image: File | null; onI
           <Plus className="size-4 text-muted-foreground" />
           <span className="text-xs text-muted-foreground">Upload image</span>
         </button>
+      )}
+      {dimensionWarning && (
+        <div className="flex gap-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2.5 text-sm text-yellow-800 max-w-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <span>This image is not 450 × 170px and may appear stretched or cropped in the image zone. You can still use it or choose a different file.</span>
+        </div>
       )}
     </div>
   );

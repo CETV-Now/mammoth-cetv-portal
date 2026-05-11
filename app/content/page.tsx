@@ -24,7 +24,7 @@ export default async function ContentPage() {
 
   const rawItems = await db
     .collection("content")
-    .find({ account_id: account._id, status: "active" })
+    .find({ account_id: account._id, status: "active", type: { $ne: "layout_content" } })
     .sort({ created_at: -1 })
     .toArray();
 
@@ -35,6 +35,9 @@ export default async function ContentPage() {
     mime_type: item.mime_type,
     runtime: item.runtime,
     created_at: item.created_at?.toISOString() ?? new Date().toISOString(),
+    transcoding_required: item.transcoding_required ?? false,
+    transcoded: item.transcoded ?? false,
+    transcoding_error: item.transcoding_error ?? false,
   }));
 
   return <ContentLibrary initialItems={items} />;

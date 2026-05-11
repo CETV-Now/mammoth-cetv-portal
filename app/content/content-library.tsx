@@ -23,6 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { UploadDialog } from "./upload-dialog";
 
 export interface ContentItem {
@@ -32,6 +37,9 @@ export interface ContentItem {
   mime_type: string;
   runtime: number;
   created_at: string;
+  transcoding_required?: boolean;
+  transcoded?: boolean;
+  transcoding_error?: boolean;
 }
 
 interface ContentLibraryProps {
@@ -174,6 +182,51 @@ interface ContentCardProps {
   onUpdate: (id: string, updates: { name: string; runtime: number }) => Promise<void>;
 }
 
+function VideoBadge({ item }: { item: ContentItem }) {
+  const isError = item.transcoding_required && item.transcoding_error;
+  const isPending = item.transcoding_required && !item.transcoded && !item.transcoding_error;
+  const isDone = item.transcoded;
+
+  const badgeClass = isError
+    ? "text-xs gap-1.5 border-red-500"
+    : isPending
+    ? "text-xs gap-1.5 border-orange-400"
+    : isDone
+    ? "text-xs gap-1.5 border-green-500"
+    : "text-xs gap-1.5";
+
+  const badge = (
+    <Badge variant={isError || isPending || isDone ? "outline" : "secondary"} className={badgeClass}>
+      <VideoIcon className="size-3" />
+      Video
+    </Badge>
+  );
+
+  if (isError) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
+        <TooltipContent className="max-w-64">
+          There was an error optimizing this item for our system. There is no action required on your part, we have been notified. You can still use this item in a playlist.
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
+        <TooltipContent className="max-w-64">
+          This item has not been optimized for our system yet. There is no action required on your part. You can still use this item in a playlist.
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return badge;
+}
+
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
@@ -234,19 +287,12 @@ function ContentCard({ item, onArchive, onUpdate }: ContentCardProps) {
           </p>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              <Badge variant="secondary" className="text-xs gap-1.5">
-                {isVideo ? (
-                  <>
-                    <VideoIcon className="size-3" />
-                    Video
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="size-3" />
-                    Image
-                  </>
-                )}
-              </Badge>
+              {isVideo ? <VideoBadge item={item} /> : (
+                <Badge variant="secondary" className="text-xs gap-1.5">
+                  <ImageIcon className="size-3" />
+                  Image
+                </Badge>
+              )}
               {item.runtime > 0 && (
                 <Badge variant="outline" className="text-xs gap-1">
                   <Clock className="size-3" />
