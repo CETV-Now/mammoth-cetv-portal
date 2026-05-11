@@ -133,7 +133,13 @@ function LayoutMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-<DropdownMenuItem onSelect={() => router.push(`/layouts/${layout._id}/edit`)}>
+        <DropdownMenuItem
+          onSelect={() => window.open(`https://player-preview.cetvnow.network?layout_id=${layout._id}`, "_blank")}
+          disabled={!layout.hasZones}
+        >
+          Preview Layout
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => router.push(`/layouts/${layout._id}/edit`)}>
           Edit
         </DropdownMenuItem>
         <DropdownMenuItem

@@ -650,6 +650,11 @@ export function EditLayoutPage({ layoutId, name: initialName, description: initi
         )}
       </div>
 
+      {step === 2 && (
+        <p className="text-xs text-muted-foreground">
+          After saving a layout you can preview what it will look like by clicking the &ldquo;Preview Layout&rdquo; option in the layout menu.
+        </p>
+      )}
     </div>
   );
 }
