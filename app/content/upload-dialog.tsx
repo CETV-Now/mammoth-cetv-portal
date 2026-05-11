@@ -75,6 +75,11 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
 
     if (!selected) return;
 
+    if (!name) {
+      const baseName = selected.name.replace(/\.[^.]+$/, "");
+      setName(baseName);
+    }
+
     if (selected.type.startsWith("image/")) {
       const url = URL.createObjectURL(selected);
       const img = new Image();
@@ -172,18 +177,6 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="content-name">Name</Label>
-            <Input
-              id="content-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Summer Promo"
-              required
-              disabled={isUploading}
-            />
-          </div>
-
-          <div className="flex flex-col gap-2">
             <Label htmlFor="content-file">File</Label>
             <Input
               id="content-file"
@@ -192,6 +185,18 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
               required
               disabled={isUploading}
               onChange={handleFileChange}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="content-name">Name</Label>
+            <Input
+              id="content-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Summer Promo"
+              required
+              disabled={isUploading}
             />
           </div>
 
