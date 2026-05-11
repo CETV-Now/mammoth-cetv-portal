@@ -16,6 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { UploadDialog } from "./upload-dialog";
 
 export interface ContentItem {
@@ -222,15 +229,23 @@ function ContentCard({ item, onArchive, onUpdate }: ContentCardProps) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-duration">Display Duration (seconds)</Label>
-              <Input
-                id="edit-duration"
-                type="number"
-                min={1}
+              <Label>Display Duration</Label>
+              <Select
                 value={editRuntime}
-                onChange={(e) => setEditRuntime(e.target.value)}
+                onValueChange={setEditRuntime}
                 disabled={isVideo}
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 Seconds</SelectItem>
+                  <SelectItem value="10">10 Seconds</SelectItem>
+                  <SelectItem value="15">15 Seconds</SelectItem>
+                  <SelectItem value="20">20 Seconds</SelectItem>
+                  <SelectItem value="30">30 Seconds</SelectItem>
+                </SelectContent>
+              </Select>
               {isVideo && (
                 <p className="text-xs text-muted-foreground">Duration is set by the video file and cannot be changed.</p>
               )}
