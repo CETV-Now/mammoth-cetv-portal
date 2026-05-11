@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Archive, ImageIcon, VideoIcon } from "lucide-react";
+import { Archive, Clock, ImageIcon, VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +79,12 @@ interface ContentCardProps {
   onArchive: (id: string) => void;
 }
 
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 function ContentCard({ item, onArchive }: ContentCardProps) {
   const isImage = item.mime_type.startsWith("image/");
   const isVideo = item.mime_type.startsWith("video/");
@@ -115,19 +121,27 @@ function ContentCard({ item, onArchive }: ContentCardProps) {
             {item.name}
           </p>
           <div className="flex items-center justify-between gap-2">
-            <Badge variant="secondary" className="text-xs">
-              {isVideo ? (
-                <>
-                  <VideoIcon className="size-3" />
-                  Video
-                </>
-              ) : (
-                <>
-                  <ImageIcon className="size-3" />
-                  Image
-                </>
+            <div className="flex items-center gap-1.5">
+              <Badge variant="secondary" className="text-xs gap-1.5">
+                {isVideo ? (
+                  <>
+                    <VideoIcon className="size-3" />
+                    Video
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="size-3" />
+                    Image
+                  </>
+                )}
+              </Badge>
+              {item.runtime > 0 && (
+                <Badge variant="outline" className="text-xs gap-1">
+                  <Clock className="size-3" />
+                  {formatDuration(item.runtime)}
+                </Badge>
               )}
-            </Badge>
+            </div>
             <Button
               variant="ghost"
               size="sm"
