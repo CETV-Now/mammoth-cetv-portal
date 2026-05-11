@@ -36,12 +36,19 @@ export default async function EditLayoutPageRoute({
 
   if (!layout) notFound();
 
+  const templateNormalize: Record<string, string> = {
+    two_zone_v: "two-zone-vertical",
+    two_zone_h: "two-zone-horizontal",
+    five_zone: "five-zone",
+  };
+  const template = layout.template as string;
+
   return (
     <EditLayoutPage
       layoutId={id}
       name={layout.name as string}
       description={(layout.description ?? "") as string}
-      template={layout.template as string}
+      template={templateNormalize[template] ?? template}
       zoneData={layout.zone_data as object[]}
     />
   );

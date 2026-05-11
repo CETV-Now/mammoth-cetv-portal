@@ -713,11 +713,17 @@ export function CreateLayoutPage() {
         }
       }
 
+      const templateNameMap: Record<TemplateId, string> = {
+        "two-zone-vertical": "two_zone_v",
+        "two-zone-horizontal": "two_zone_h",
+        "five-zone": "five_zone",
+      };
+
       const res = await fetch("/api/layouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          template: selectedTemplate,
+          template: templateNameMap[selectedTemplate!],
           name: name.trim(),
           description: description.trim(),
           zone_data,
@@ -904,6 +910,7 @@ export function CreateLayoutPage() {
           </>
         )}
       </div>
+
     </div>
   );
 }

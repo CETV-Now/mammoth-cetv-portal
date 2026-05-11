@@ -16,6 +16,9 @@ const templateLabels: Record<string, string> = {
   "two-zone-vertical": "Two Zone Vertical",
   "two-zone-horizontal": "Two Zone Horizontal",
   "five-zone": "5 Zone",
+  two_zone_v: "Two Zone Vertical",
+  two_zone_h: "Two Zone Horizontal",
+  five_zone: "5 Zone",
 };
 
 interface LayoutRow {
@@ -24,6 +27,7 @@ interface LayoutRow {
   description: string;
   template: string;
   screensAssigned: number;
+  hasZones: boolean;
 }
 
 export function LayoutsPage({ layouts: initial }: { layouts: LayoutRow[] }) {
@@ -129,7 +133,7 @@ function LayoutMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={() => router.push(`/layouts/${layout._id}/edit`)}>
+<DropdownMenuItem onSelect={() => router.push(`/layouts/${layout._id}/edit`)}>
           Edit
         </DropdownMenuItem>
         <DropdownMenuItem

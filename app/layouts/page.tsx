@@ -42,6 +42,7 @@ export default async function LayoutsPageRoute() {
     description: (l.description ?? "") as string,
     template: l.template as string,
     screensAssigned: screenCountByLayout.get(l._id.toString()) ?? 0,
+    hasZones: Array.isArray(l.zone_data) && l.zone_data.length > 0,
   }));
 
   return <LayoutsPage layouts={layouts} />;
