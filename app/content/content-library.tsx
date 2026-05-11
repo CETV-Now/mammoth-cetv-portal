@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Archive, Clock, ImageIcon, Pencil, VideoIcon } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, Clock, ImageIcon, Pencil, VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -38,8 +38,13 @@ interface ContentLibraryProps {
   initialItems: ContentItem[];
 }
 
+type TypeFilter = "all" | "video" | "image";
+type SortKey = "name_asc" | "name_desc" | "date_asc" | "date_desc";
+
 export function ContentLibrary({ initialItems }: ContentLibraryProps) {
   const [items, setItems] = React.useState<ContentItem[]>(initialItems);
+  const [typeFilter, setTypeFilter] = React.useState<TypeFilter>("all");
+  const [sort, setSort] = React.useState<SortKey>("name_asc");
 
   function handleUploaded(newItem: ContentItem) {
     setItems((prev) => [newItem, ...prev]);
@@ -79,6 +84,21 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
     }
   }
 
+  const visibleItems = React.useMemo(() => {
+    let filtered = items;
+    if (typeFilter === "video") filtered = items.filter((i) => i.mime_type.startsWith("video/"));
+    else if (typeFilter === "image") filtered = items.filter((i) => i.mime_type.startsWith("image/"));
+
+    return [...filtered].sort((a, b) => {
+      switch (sort) {
+        case "name_asc":  return a.name.localeCompare(b.name);
+        case "name_desc": return b.name.localeCompare(a.name);
+        case "date_asc":  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "date_desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+  }, [items, typeFilter, sort]);
+
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-24">
@@ -88,6 +108,12 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
     );
   }
 
+  const filterButtons: { value: TypeFilter; label: string }[] = [
+    { value: "all", label: "All" },
+    { value: "video", label: "Videos" },
+    { value: "image", label: "Images" },
+  ];
+
   return (
     <div className="flex flex-col gap-6 pt-4">
       <div className="flex items-center justify-between">
@@ -95,11 +121,49 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
         <UploadDialog onUploaded={handleUploaded} />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {items.map((item) => (
-          <ContentCard key={item._id} item={item} onArchive={handleArchive} onUpdate={handleUpdate} />
-        ))}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1">
+          {filterButtons.map(({ value, label }) => (
+            <Button
+              key={value}
+              variant={typeFilter === value ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setTypeFilter(value)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+        <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name_asc">
+              <span className="flex items-center gap-1.5"><ArrowUp className="size-3.5" />Name</span>
+            </SelectItem>
+            <SelectItem value="name_desc">
+              <span className="flex items-center gap-1.5"><ArrowDown className="size-3.5" />Name</span>
+            </SelectItem>
+            <SelectItem value="date_asc">
+              <span className="flex items-center gap-1.5"><ArrowUp className="size-3.5" />Added Date</span>
+            </SelectItem>
+            <SelectItem value="date_desc">
+              <span className="flex items-center gap-1.5"><ArrowDown className="size-3.5" />Added Date</span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      {visibleItems.length === 0 ? (
+        <p className="text-muted-foreground text-sm text-center py-12">No {typeFilter === "video" ? "videos" : "images"} found.</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {visibleItems.map((item) => (
+            <ContentCard key={item._id} item={item} onArchive={handleArchive} onUpdate={handleUpdate} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
