@@ -273,7 +273,7 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
             <p className="text-sm text-muted-foreground">There are two ways to activate your screen.</p>
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-3 text-sm">
-                <p className="text-foreground">Scan the QR code on your screen. When prompted, enter the code below:</p>
+                <p className="text-foreground">Scan the QR code on your screen with your phone. When prompted, enter the code below on your phone:</p>
                 <p className="font-bold text-foreground text-2xl tracking-widest font-mono text-center">
                   {installCodeLoading ? "..." : (installCode ?? "—")}
                 </p>

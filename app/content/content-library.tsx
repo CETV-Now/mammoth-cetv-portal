@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Archive, Clock, ImageIcon, VideoIcon } from "lucide-react";
+import { Archive, Clock, ImageIcon, Pencil, VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { UploadDialog } from "./upload-dialog";
 
 export interface ContentItem {
@@ -33,6 +36,26 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
 
   function handleUploaded(newItem: ContentItem) {
     setItems((prev) => [newItem, ...prev]);
+  }
+
+  async function handleUpdate(id: string, updates: { name: string; runtime: number }) {
+    try {
+      const res = await fetch(`/api/content/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to update");
+      }
+      setItems((prev) =>
+        prev.map((item) => (item._id === id ? { ...item, ...updates } : item))
+      );
+      toast.success("Content updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
+    }
   }
 
   async function handleArchive(id: string) {
@@ -67,7 +90,7 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {items.map((item) => (
-          <ContentCard key={item._id} item={item} onArchive={handleArchive} />
+          <ContentCard key={item._id} item={item} onArchive={handleArchive} onUpdate={handleUpdate} />
         ))}
       </div>
     </div>
@@ -77,6 +100,7 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
 interface ContentCardProps {
   item: ContentItem;
   onArchive: (id: string) => void;
+  onUpdate: (id: string, updates: { name: string; runtime: number }) => Promise<void>;
 }
 
 function formatDuration(seconds: number): string {
@@ -85,10 +109,27 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function ContentCard({ item, onArchive }: ContentCardProps) {
+function ContentCard({ item, onArchive, onUpdate }: ContentCardProps) {
   const isImage = item.mime_type.startsWith("image/");
   const isVideo = item.mime_type.startsWith("video/");
   const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [editName, setEditName] = React.useState(item.name);
+  const [editRuntime, setEditRuntime] = React.useState(String(item.runtime));
+  const [saving, setSaving] = React.useState(false);
+
+  function openEdit() {
+    setEditName(item.name);
+    setEditRuntime(String(item.runtime));
+    setEditOpen(true);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    await onUpdate(item._id, { name: editName.trim(), runtime: Number(editRuntime) || 0 });
+    setSaving(false);
+    setEditOpen(false);
+  }
 
   return (
     <>
@@ -142,18 +183,67 @@ function ContentCard({ item, onArchive }: ContentCardProps) {
                 </Badge>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-muted-foreground hover:text-destructive"
-              onClick={() => onArchive(item._id)}
-            >
-              <Archive className="size-3.5" />
-              <span className="sr-only">Archive</span>
-            </Button>
+            <div className="flex items-center gap-0.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                onClick={openEdit}
+              >
+                <Pencil className="size-3.5" />
+                <span className="sr-only">Edit</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-muted-foreground hover:text-destructive"
+                onClick={() => onArchive(item._id)}
+              >
+                <Archive className="size-3.5" />
+                <span className="sr-only">Archive</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit Content</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="edit-duration">Display Duration (seconds)</Label>
+              <Input
+                id="edit-duration"
+                type="number"
+                min={1}
+                value={editRuntime}
+                onChange={(e) => setEditRuntime(e.target.value)}
+                disabled={isVideo}
+              />
+              {isVideo && (
+                <p className="text-xs text-muted-foreground">Duration is set by the video file and cannot be changed.</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave} disabled={saving || !editName.trim()}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className={isVideo ? "max-w-4xl" : "max-w-fit max-w-[90vw]"}>
