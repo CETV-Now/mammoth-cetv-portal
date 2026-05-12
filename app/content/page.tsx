@@ -38,6 +38,7 @@ export default async function ContentPage() {
     transcoding_required: item.transcoding_required ?? false,
     transcoded: item.transcoded ?? false,
     transcoding_error: item.transcoding_error ?? false,
+    thumbnail_url: item.thumbnail_url ?? null,
   }));
 
   return <ContentLibrary initialItems={items} />;

@@ -3,11 +3,14 @@ import { tasks } from "@trigger.dev/sdk";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 
-export async function GET() {
+export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { searchParams } = new URL(req.url);
+  const status = searchParams.get("status") === "archived" ? "archived" : "active";
 
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB);
@@ -24,7 +27,7 @@ export async function GET() {
 
   const items = await db
     .collection("content")
-    .find({ account_id: account._id, status: "active" })
+    .find({ account_id: account._id, status, type: { $ne: "layout_content" } })
     .sort({ created_at: -1 })
     .toArray();
 

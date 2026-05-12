@@ -42,9 +42,12 @@ export async function PATCH(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const body = await req.json().catch(() => ({}));
+  const status = body?.status === "active" ? "active" : "archived";
+
   await db.collection("content").updateOne(
     { _id: contentId },
-    { $set: { status: "archived", updated_at: new Date() } }
+    { $set: { status, updated_at: new Date() } }
   );
 
   return Response.json({ success: true });

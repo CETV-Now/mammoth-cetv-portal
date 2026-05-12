@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Archive, ArrowDown, ArrowUp, Clock, ImageIcon, Pencil, VideoIcon } from "lucide-react";
+import { Archive, ArchiveRestore, ArchiveX, ArrowDown, ArrowUp, Clock, ImageIcon, Pencil, VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ export interface ContentItem {
   transcoding_required?: boolean;
   transcoded?: boolean;
   transcoding_error?: boolean;
+  thumbnail_url?: string;
 }
 
 interface ContentLibraryProps {
@@ -53,6 +54,29 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
   const [items, setItems] = React.useState<ContentItem[]>(initialItems);
   const [typeFilter, setTypeFilter] = React.useState<TypeFilter>("all");
   const [sort, setSort] = React.useState<SortKey>("name_asc");
+  const [showArchived, setShowArchived] = React.useState(false);
+  const [archivedItems, setArchivedItems] = React.useState<ContentItem[] | null>(null);
+  const [archivedLoading, setArchivedLoading] = React.useState(false);
+
+  async function handleToggleArchived() {
+    if (!showArchived && archivedItems === null) {
+      setArchivedLoading(true);
+      try {
+        const res = await fetch("/api/content?status=archived");
+        if (!res.ok) throw new Error("Failed to load archived content");
+        const data: ContentItem[] = await res.json();
+        setArchivedItems(data);
+      } catch {
+        toast.error("Failed to load archived content");
+        setArchivedLoading(false);
+        return;
+      }
+      setArchivedLoading(false);
+    }
+    setShowArchived((prev) => !prev);
+  }
+
+  const activeSource = showArchived ? (archivedItems ?? []) : items;
 
   function handleUploaded(newItem: ContentItem) {
     setItems((prev) => [newItem, ...prev]);
@@ -80,7 +104,11 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
 
   async function handleArchive(id: string) {
     try {
-      const res = await fetch(`/api/content/${id}`, { method: "PATCH" });
+      const res = await fetch(`/api/content/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "archived" }),
+      });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? "Failed to archive");
@@ -92,10 +120,30 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
     }
   }
 
+  async function handleUnarchive(id: string) {
+    try {
+      const res = await fetch(`/api/content/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active" }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to restore");
+      }
+      const restored = archivedItems?.find((item) => item._id === id);
+      setArchivedItems((prev) => prev?.filter((item) => item._id !== id) ?? prev);
+      if (restored) setItems((prev) => [restored, ...prev]);
+      toast.success("Content restored");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Restore failed");
+    }
+  }
+
   const visibleItems = React.useMemo(() => {
-    let filtered = items;
-    if (typeFilter === "video") filtered = items.filter((i) => i.mime_type.startsWith("video/"));
-    else if (typeFilter === "image") filtered = items.filter((i) => i.mime_type.startsWith("image/"));
+    let filtered = activeSource;
+    if (typeFilter === "video") filtered = activeSource.filter((i) => i.mime_type.startsWith("video/"));
+    else if (typeFilter === "image") filtered = activeSource.filter((i) => i.mime_type.startsWith("image/"));
 
     return [...filtered].sort((a, b) => {
       switch (sort) {
@@ -105,9 +153,9 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
         case "date_desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       }
     });
-  }, [items, typeFilter, sort]);
+  }, [activeSource, typeFilter, sort]);
 
-  if (items.length === 0) {
+  if (items.length === 0 && !showArchived) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-24">
         <p className="text-muted-foreground text-sm">You haven&apos;t uploaded anything yet.</p>
@@ -126,7 +174,7 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
     <div className="flex flex-col gap-6 pt-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Content Library</h1>
-        <UploadDialog onUploaded={handleUploaded} />
+        {!showArchived && <UploadDialog onUploaded={handleUploaded} />}
       </div>
 
       <div className="flex items-center justify-between gap-3">
@@ -142,33 +190,56 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
             </Button>
           ))}
         </div>
-        <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name_asc">
-              <span className="flex items-center gap-1.5"><ArrowUp className="size-3.5" />Name</span>
-            </SelectItem>
-            <SelectItem value="name_desc">
-              <span className="flex items-center gap-1.5"><ArrowDown className="size-3.5" />Name</span>
-            </SelectItem>
-            <SelectItem value="date_asc">
-              <span className="flex items-center gap-1.5"><ArrowUp className="size-3.5" />Added Date</span>
-            </SelectItem>
-            <SelectItem value="date_desc">
-              <span className="flex items-center gap-1.5"><ArrowDown className="size-3.5" />Added Date</span>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name_asc">
+                <span className="flex items-center gap-1.5"><ArrowUp className="size-3.5" />Name</span>
+              </SelectItem>
+              <SelectItem value="name_desc">
+                <span className="flex items-center gap-1.5"><ArrowDown className="size-3.5" />Name</span>
+              </SelectItem>
+              <SelectItem value="date_asc">
+                <span className="flex items-center gap-1.5"><ArrowUp className="size-3.5" />Added Date</span>
+              </SelectItem>
+              <SelectItem value="date_desc">
+                <span className="flex items-center gap-1.5"><ArrowDown className="size-3.5" />Added Date</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant={showArchived ? "secondary" : "outline"}
+            size="sm"
+            onClick={handleToggleArchived}
+            disabled={archivedLoading}
+            className="gap-1.5"
+          >
+            <ArchiveX className="size-3.5" />
+            {archivedLoading ? "Loading..." : showArchived ? "Hide Archived" : "Show Archived"}
+          </Button>
+        </div>
       </div>
 
-      {visibleItems.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-12">No {typeFilter === "video" ? "videos" : "images"} found.</p>
+      {showArchived && (
+        <div className="flex items-center gap-2 rounded-md bg-muted/50 border px-3 py-2 text-sm text-muted-foreground">
+          <ArchiveX className="size-4 shrink-0" />
+          Viewing archived content — these items can not be added to your playlist.
+        </div>
+      )}
+
+      {archivedLoading ? (
+        <p className="text-muted-foreground text-sm text-center py-12">Loading archived content...</p>
+      ) : visibleItems.length === 0 ? (
+        <p className="text-muted-foreground text-sm text-center py-12">
+          {showArchived ? "No archived content found." : `No ${typeFilter === "video" ? "videos" : "images"} found.`}
+        </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {visibleItems.map((item) => (
-            <ContentCard key={item._id} item={item} onArchive={handleArchive} onUpdate={handleUpdate} />
+            <ContentCard key={item._id} item={item} onArchive={handleArchive} onUnarchive={handleUnarchive} onUpdate={handleUpdate} readOnly={showArchived} />
           ))}
         </div>
       )}
@@ -179,7 +250,9 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
 interface ContentCardProps {
   item: ContentItem;
   onArchive: (id: string) => void;
+  onUnarchive: (id: string) => void;
   onUpdate: (id: string, updates: { name: string; runtime: number }) => Promise<void>;
+  readOnly?: boolean;
 }
 
 function VideoBadge({ item }: { item: ContentItem }) {
@@ -233,7 +306,7 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function ContentCard({ item, onArchive, onUpdate }: ContentCardProps) {
+function ContentCard({ item, onArchive, onUnarchive, onUpdate, readOnly = false }: ContentCardProps) {
   const isImage = item.mime_type.startsWith("image/");
   const isVideo = item.mime_type.startsWith("video/");
   const [previewOpen, setPreviewOpen] = React.useState(false);
@@ -271,9 +344,17 @@ function ContentCard({ item, onArchive, onUpdate }: ContentCardProps) {
             />
           )}
           {isVideo && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <VideoIcon className="size-8 text-muted-foreground group-hover:text-foreground transition-colors" />
-            </div>
+            item.thumbnail_url ? (
+              <img
+                src={item.thumbnail_url}
+                alt={item.name}
+                className="absolute inset-0 h-full w-full object-cover group-hover:opacity-80 transition-opacity"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <VideoIcon className="size-8 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+            )
           )}
           {!isImage && !isVideo && (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -301,24 +382,38 @@ function ContentCard({ item, onArchive, onUpdate }: ContentCardProps) {
               )}
             </div>
             <div className="flex items-center gap-0.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                onClick={openEdit}
-              >
-                <Pencil className="size-3.5" />
-                <span className="sr-only">Edit</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-muted-foreground hover:text-destructive"
-                onClick={() => onArchive(item._id)}
-              >
-                <Archive className="size-3.5" />
-                <span className="sr-only">Archive</span>
-              </Button>
+              {readOnly ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => onUnarchive(item._id)}
+                >
+                  <ArchiveRestore className="size-3.5" />
+                  <span className="sr-only">Restore</span>
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                    onClick={openEdit}
+                  >
+                    <Pencil className="size-3.5" />
+                    <span className="sr-only">Edit</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-muted-foreground hover:text-destructive"
+                    onClick={() => onArchive(item._id)}
+                  >
+                    <Archive className="size-3.5" />
+                    <span className="sr-only">Archive</span>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
