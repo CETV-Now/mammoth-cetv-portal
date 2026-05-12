@@ -92,6 +92,8 @@ export async function POST(req: Request) {
       .catch((err) => console.error("[transcode-user-content] trigger failed:", err));
   }
 
+  const isVideo = mimeType === "video/mp4";
+
   return Response.json({
     _id: result.insertedId.toString(),
     account_id: account._id.toString(),
@@ -101,5 +103,8 @@ export async function POST(req: Request) {
     runtime,
     created_at: now.toISOString(),
     updated_at: now.toISOString(),
+    transcoding_required: isVideo,
+    transcoded: false,
+    transcoding_error: false,
   });
 }
