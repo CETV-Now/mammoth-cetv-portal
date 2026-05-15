@@ -28,6 +28,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { GenerateDialog } from "./generate-dialog";
 import { UploadDialog } from "./upload-dialog";
 
 export interface ContentItem {
@@ -159,7 +160,10 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-24">
         <p className="text-muted-foreground text-sm">You haven&apos;t uploaded anything yet.</p>
-        <UploadDialog onUploaded={handleUploaded} />
+        <div className="flex items-center gap-2">
+          <GenerateDialog onGenerated={handleUploaded} />
+          <UploadDialog onUploaded={handleUploaded} />
+        </div>
       </div>
     );
   }
@@ -174,7 +178,12 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
     <div className="flex flex-col gap-6 pt-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Content Library</h1>
-        {!showArchived && <UploadDialog onUploaded={handleUploaded} />}
+        {!showArchived && (
+          <div className="flex items-center gap-2">
+            <GenerateDialog onGenerated={handleUploaded} />
+            <UploadDialog onUploaded={handleUploaded} />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-3">
