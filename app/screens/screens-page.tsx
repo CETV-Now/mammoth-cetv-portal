@@ -226,11 +226,7 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
   const [pins, setPins] = React.useState(["", "", "", ""]);
   const [installCode, setInstallCode] = React.useState<string | null>(null);
   const [installCodeLoading, setInstallCodeLoading] = React.useState(false);
-  const pinRef0 = React.useRef<HTMLInputElement>(null);
-  const pinRef1 = React.useRef<HTMLInputElement>(null);
-  const pinRef2 = React.useRef<HTMLInputElement>(null);
-  const pinRef3 = React.useRef<HTMLInputElement>(null);
-  const pinRefs = [pinRef0, pinRef1, pinRef2, pinRef3];
+  const pinInputsRef = React.useRef<HTMLInputElement[]>([]);
 
   function handleInstallOpenChange(open: boolean) {
     setInstallOpen(open);
@@ -293,27 +289,27 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
                 <p className="text-foreground">Enter the 4 digit PIN displayed on the screen and click activate:</p>
                 <div className="flex gap-3 justify-center">
                   {pins.map((digit, index) => (
-                    <Input
+                    <input
                       key={index}
-                      ref={pinRefs[index]}
+                      ref={(el) => { if (el) pinInputsRef.current[index] = el; }}
                       value={digit}
                       type="text"
                       inputMode="numeric"
                       maxLength={1}
-                      className="w-12 h-12 text-center text-xl font-mono p-0"
+                      className="w-12 h-12 rounded-md border border-input bg-transparent text-center text-xl font-mono shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                       onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, "").slice(-1);
                         const next = [...pins];
                         next[index] = val;
                         setPins(next);
-                        if (val && index < 3) pinRefs[index + 1].current?.focus();
+                        if (val && index < 3) pinInputsRef.current[index + 1]?.focus();
                       }}
                       onKeyDown={(e) => {
                         if (e.key === "Backspace" && !pins[index] && index > 0) {
                           const next = [...pins];
                           next[index - 1] = "";
                           setPins(next);
-                          pinRefs[index - 1].current?.focus();
+                          pinInputsRef.current[index - 1]?.focus();
                         }
                       }}
                       onFocus={(e) => e.target.select()}
@@ -323,8 +319,7 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
                         const next = [...pins];
                         for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
                         setPins(next);
-                        const focusIdx = Math.min(pasted.length, 3);
-                        pinRefs[focusIdx].current?.focus();
+                        pinInputsRef.current[Math.min(pasted.length, 3)]?.focus();
                       }}
                     />
                   ))}
