@@ -223,14 +223,19 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const [setPlaylistOpen, setSetPlaylistOpen] = React.useState(false);
   const [setLayoutOpen, setSetLayoutOpen] = React.useState(false);
-  const [pin, setPin] = React.useState("");
+  const [pins, setPins] = React.useState(["", "", "", ""]);
   const [installCode, setInstallCode] = React.useState<string | null>(null);
   const [installCodeLoading, setInstallCodeLoading] = React.useState(false);
+  const pinRef0 = React.useRef<HTMLInputElement>(null);
+  const pinRef1 = React.useRef<HTMLInputElement>(null);
+  const pinRef2 = React.useRef<HTMLInputElement>(null);
+  const pinRef3 = React.useRef<HTMLInputElement>(null);
+  const pinRefs = [pinRef0, pinRef1, pinRef2, pinRef3];
 
   function handleInstallOpenChange(open: boolean) {
     setInstallOpen(open);
     if (!open) {
-      setPin("");
+      setPins(["", "", "", ""]);
       setInstallCode(null);
     }
   }
@@ -286,17 +291,45 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
               </div>
               <div className="flex flex-col gap-3 text-sm">
                 <p className="text-foreground">Enter the 4 digit PIN displayed on the screen and click activate:</p>
-                <div className="flex flex-col gap-2">
-                  <Input
-                    id="install-pin"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    placeholder="0000"
-                    maxLength={4}
-                    className="text-center text-lg tracking-widest font-mono"
-                  />
+                <div className="flex gap-3 justify-center">
+                  {pins.map((digit, index) => (
+                    <Input
+                      key={index}
+                      ref={pinRefs[index]}
+                      value={digit}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      className="w-12 h-12 text-center text-xl font-mono p-0"
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(-1);
+                        const next = [...pins];
+                        next[index] = val;
+                        setPins(next);
+                        if (val && index < 3) pinRefs[index + 1].current?.focus();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Backspace" && !pins[index] && index > 0) {
+                          const next = [...pins];
+                          next[index - 1] = "";
+                          setPins(next);
+                          pinRefs[index - 1].current?.focus();
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+                        const next = [...pins];
+                        for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
+                        setPins(next);
+                        const focusIdx = Math.min(pasted.length, 3);
+                        pinRefs[focusIdx].current?.focus();
+                      }}
+                    />
+                  ))}
                 </div>
-                <Button disabled={pin.length !== 4} className="w-full">Activate</Button>
+                <Button disabled={pins.join("").length !== 4} className="w-full">Activate</Button>
               </div>
             </div>
           </div>
