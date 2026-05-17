@@ -8,7 +8,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-import { CheckCircle2, Copy, MoreHorizontal, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { CheckCircle2, Globe, MoreHorizontal, Pencil, Power, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,8 @@ export interface ScreenRow {
   location_name: string;
   status: string;
   connected: boolean;
+  device_id: string | null;
+  timezone: string | null;
   ad_serving_mode: string;
   audio_enabled: boolean;
   playlist_id: string | null;
@@ -49,6 +51,17 @@ export interface ScreenRow {
   layout_id: string | null;
   layout_name: string | null;
 }
+
+const US_TIMEZONES = [
+  { id: "America/New_York", label: "Eastern Time" },
+  { id: "America/Chicago", label: "Central Time" },
+  { id: "America/Denver", label: "Mountain Time" },
+  { id: "America/Phoenix", label: "Mountain Time (Arizona)" },
+  { id: "America/Los_Angeles", label: "Pacific Time" },
+  { id: "America/Anchorage", label: "Alaska Time" },
+  { id: "America/Adak", label: "Hawaii-Aleutian Time" },
+  { id: "Pacific/Honolulu", label: "Hawaii Time (no DST)" },
+] as const;
 
 export interface LocationGroup {
   location_id: string;
@@ -609,6 +622,75 @@ function ScreenDetailsModal({
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [rebooting, setRebooting] = React.useState(false);
+  const [tzDialogOpen, setTzDialogOpen] = React.useState(false);
+  const [selectedTz, setSelectedTz] = React.useState("");
+  const [settingTz, setSettingTz] = React.useState(false);
+
+  const canAction = screen.connected && !!screen.device_id;
+  const offlineReason = !screen.device_id
+    ? "No device ID — screen actions unavailable."
+    : "Screen is offline — screen actions unavailable.";
+
+  const currentTzLabel =
+    US_TIMEZONES.find((tz) => tz.id === screen.timezone)?.label ?? screen.timezone;
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      const res = await fetch(`/api/screens/${screen._id}/reload`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to refresh screen");
+      }
+      toast.success("Refresh command sent");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  async function handleReboot() {
+    setRebooting(true);
+    try {
+      const res = await fetch(`/api/screens/${screen._id}/reboot`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to reboot screen");
+      }
+      toast.success("Reboot command sent");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setRebooting(false);
+    }
+  }
+
+  async function handleSetTimezone() {
+    if (!selectedTz) return;
+    setSettingTz(true);
+    try {
+      const res = await fetch(`/api/screens/${screen._id}/set-timezone`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timezone: selectedTz }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to set timezone");
+      }
+      toast.success("Timezone updated");
+      setTzDialogOpen(false);
+      setSelectedTz("");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSettingTz(false);
+    }
+  }
 
   async function handleDelete() {
     setDeleting(true);
@@ -633,91 +715,156 @@ function ScreenDetailsModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Screen Details</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Screen Details</DialogTitle>
+          </DialogHeader>
 
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardContent className="pt-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <p className="font-semibold text-base">{screen.screen_name}</p>
-                <span
-                  className={`h-2.5 w-2.5 rounded-full shrink-0 ${
-                    screen.connected ? "bg-green-500" : "bg-red-400"
-                  }`}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">{screen.location_name}</p>
-              <div className="pt-1">
-                <StatusBadge status={screen.status} />
-              </div>
-              <div className="flex flex-col gap-1 pt-1 text-sm text-muted-foreground">
-                <span>
-                  <span className="font-medium text-foreground">Playlist:</span>{" "}
-                  {screen.playlist_id && screen.playlist_name ? (
-                    <Link
-                      href={`/playlists/${screen.playlist_id}/edit`}
-                      className="text-primary hover:underline"
-                      onClick={() => onOpenChange(false)}
-                    >
-                      {screen.playlist_name}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground/50">None assigned</span>
-                  )}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="font-medium text-foreground">Screen ID:</span>{" "}
-                  <span className="font-mono text-xs">{screen._id}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard.writeText(screen._id);
-                      toast.success("Screen ID copied.");
-                    }}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    title="Copy Screen ID"
+          <div className="flex flex-col gap-4">
+            <Card>
+              <CardContent className="pt-4 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-base">{screen.screen_name}</p>
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full shrink-0 ${
+                      screen.connected ? "bg-green-500" : "bg-red-400"
+                    }`}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">{screen.location_name}</p>
+                <div className="pt-1">
+                  <StatusBadge status={screen.status} />
+                </div>
+                <div className="flex flex-col gap-1 pt-1 text-sm text-muted-foreground">
+                  <span>
+                    <span className="font-medium text-foreground">Playlist:</span>{" "}
+                    {screen.playlist_id && screen.playlist_name ? (
+                      <Link
+                        href={`/playlists/${screen.playlist_id}/edit`}
+                        className="hover:underline"
+                        onClick={() => onOpenChange(false)}
+                      >
+                        {screen.playlist_name}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground/50">None assigned</span>
+                    )}
+                  </span>
+                  <span>
+                    <span className="font-medium text-foreground">Layout:</span>{" "}
+                    {screen.layout_name ? (
+                      <span>{screen.layout_name}</span>
+                    ) : (
+                      <span className="text-muted-foreground/50">—</span>
+                    )}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-medium text-foreground">Screen ID:</span>{" "}
+                    <span className="font-mono text-xs">{screen._id}</span>
+                  </span>
+                  <span>
+                    <span className="font-medium text-foreground">Sound Enabled:</span>{" "}
+                    {screen.audio_enabled ? "True" : "False"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-sm font-medium text-foreground">Timezone</p>
+                    <p className="text-sm text-muted-foreground">
+                      {currentTzLabel ?? <span className="text-muted-foreground/50">Not set</span>}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 shrink-0"
+                    disabled={!canAction}
+                    onClick={() => { setSelectedTz(""); setTzDialogOpen(true); }}
                   >
-                    <Copy className="size-3.5" />
-                  </button>
-                </span>
-                <span>
-                  <span className="font-medium text-foreground">Sound Enabled:</span>{" "}
-                  {screen.audio_enabled ? "True" : "False"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    <Globe className="size-4" />
+                    Set Timezone
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-        <div className="flex items-center gap-2 pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => {
-              // wired later
-            }}
-          >
-            <RotateCcw className="size-4" />
-            Refresh Screen
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="gap-1.5 ml-auto"
-            disabled={deleting}
-            onClick={handleDelete}
-          >
-            <Trash2 className="size-4" />
-            {deleting ? "Deleting..." : "Delete Screen"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <Card>
+              <CardContent className="pt-4 flex flex-col gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={!canAction || refreshing}
+                    onClick={handleRefresh}
+                  >
+                    <RotateCcw className="size-4" />
+                    {refreshing ? "Refreshing..." : "Refresh Screen"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={!canAction || rebooting}
+                    onClick={handleReboot}
+                  >
+                    <Power className="size-4" />
+                    {rebooting ? "Rebooting..." : "Reboot Screen"}
+                  </Button>
+                  {!canAction && (
+                    <p className="w-full text-xs text-muted-foreground">{offlineReason}</p>
+                  )}
+                </div>
+                <div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={deleting}
+                    onClick={handleDelete}
+                  >
+                    <Trash2 className="size-4" />
+                    {deleting ? "Deleting..." : "Delete Screen"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tzDialogOpen} onOpenChange={(v) => { if (!v) setTzDialogOpen(false); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Set Timezone</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <Select value={selectedTz} onValueChange={setSelectedTz}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                {US_TIMEZONES.map((tz) => (
+                  <SelectItem key={tz.id} value={tz.id}>
+                    {tz.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button disabled={!selectedTz || settingTz} onClick={handleSetTimezone}>
+              {settingTz ? "Setting..." : "Set Timezone"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

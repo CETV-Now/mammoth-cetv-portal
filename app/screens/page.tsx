@@ -84,6 +84,8 @@ export default async function ScreensPageRoute() {
       location_name: locName,
       status: s.status ?? "new",
       connected: s.connected ?? false,
+      device_id: s.device_id ?? null,
+      timezone: s.timezone ?? null,
       ad_serving_mode: s.ad_serving_mode ?? "ad-supported",
       audio_enabled: s.audio_enabled === true,
       playlist_id: s.playlist_id ? s.playlist_id.toString() : null,

@@ -41,19 +41,19 @@ export async function POST(
   }
 
   const socketUrl = process.env.SOCKET_SERVER_URL;
-  const socketToken = process.env.SOCKET_SERVER_API_TOKEN;
+  const socketKey = process.env.SOCKET_SERVER_API_TOKEN;
 
-  if (!socketUrl || !socketToken) {
+  if (!socketUrl || !socketKey) {
     return Response.json({ error: "Socket server not configured" }, { status: 503 });
   }
 
-  const res = await fetch(`${socketUrl}/messages`, {
+  const res = await fetch(socketUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${socketToken}`,
+      Authorization: socketKey,
     },
-    body: JSON.stringify({ deviceId: screen.device_id, action: "refresh" }),
+    body: JSON.stringify({ deviceId: screen.device_id, action: "reboot" }),
   });
 
   if (!res.ok) {

@@ -2,8 +2,19 @@ import { auth } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 
+const VALID_TIMEZONES = new Set([
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Phoenix",
+  "America/Los_Angeles",
+  "America/Anchorage",
+  "America/Adak",
+  "Pacific/Honolulu",
+]);
+
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { userId } = await auth();
@@ -18,6 +29,13 @@ export async function POST(
     screenId = new ObjectId(id);
   } catch {
     return Response.json({ error: "Invalid screen id" }, { status: 400 });
+  }
+
+  const body = await req.json();
+  const { timezone } = body;
+
+  if (!timezone || !VALID_TIMEZONES.has(timezone)) {
+    return Response.json({ error: "Invalid or missing timezone" }, { status: 400 });
   }
 
   const client = await clientPromise;
@@ -47,22 +65,27 @@ export async function POST(
     return Response.json({ error: "Socket server not configured" }, { status: 503 });
   }
 
-  const res = await fetch(socketUrl, {
+  const socketRes = await fetch(socketUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: socketKey,
     },
-    body: JSON.stringify({ deviceId: screen.device_id, action: "reload" }),
+    body: JSON.stringify({ deviceId: screen.device_id, action: "set_timezone", timezone }),
   });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
+  if (!socketRes.ok) {
+    const socketBody = await socketRes.json().catch(() => ({}));
     return Response.json(
-      { error: body.error ?? "Failed to send command to device" },
-      { status: res.status }
+      { error: socketBody.error ?? "Failed to send command to device" },
+      { status: socketRes.status }
     );
   }
+
+  await db.collection("screens").updateOne(
+    { _id: screenId },
+    { $set: { timezone, updated_at: new Date() } }
+  );
 
   return Response.json({ success: true });
 }
