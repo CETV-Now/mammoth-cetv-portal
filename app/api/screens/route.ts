@@ -26,7 +26,7 @@ export async function GET() {
     .collection("screens")
     .find(
       { account_id: account._id },
-      { projection: { _id: 1, screen_name: 1, location_name: 1, playlist_id: 1 } }
+      { projection: { _id: 1, screen_name: 1, location_name: 1, playlist_id: 1, connected: 1, timezone: 1 } }
     )
     .toArray();
 
@@ -35,6 +35,8 @@ export async function GET() {
     screen_name: screen.screen_name,
     location_name: screen.location_name,
     playlist_id: screen.playlist_id ? screen.playlist_id.toString() : null,
+    connected: screen.connected === true,
+    timezone: screen.timezone ?? null,
   }));
 
   return Response.json(serialized);
