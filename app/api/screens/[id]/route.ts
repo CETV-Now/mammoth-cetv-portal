@@ -84,6 +84,12 @@ export async function PATCH(
   const now = new Date();
   const update: Record<string, unknown> = { updated_at: now };
 
+  if ("screen_name" in body) {
+    const screenName = typeof body.screen_name === "string" ? body.screen_name.trim() : null;
+    if (!screenName) return Response.json({ error: "screen_name cannot be empty" }, { status: 400 });
+    update.screen_name = screenName;
+  }
+
   if ("playlist_id" in body) {
     update.playlist_id = body.playlist_id ? new ObjectId(body.playlist_id) : null;
   }

@@ -8,7 +8,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-import { CheckCircle2, Copy, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
+import { CheckCircle2, Copy, MoreHorizontal, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -179,9 +179,77 @@ function LocationSection({
 }
 
 function ScreenRow({ screen, isLast }: { screen: ScreenRow; isLast: boolean }) {
+  const router = useRouter();
+  const [editing, setEditing] = React.useState(false);
+  const [name, setName] = React.useState(screen.screen_name);
+  const [saving, setSaving] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const cancelledRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (editing) inputRef.current?.focus();
+  }, [editing]);
+
+  async function handleSave() {
+    const trimmed = (inputRef.current?.value ?? "").trim();
+    if (!trimmed || trimmed === name) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/screens/${screen._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ screen_name: trimmed }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to update screen name");
+      }
+      setName(trimmed);
+      setEditing(false);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update screen name");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") { e.preventDefault(); handleSave(); }
+    if (e.key === "Escape") { cancelledRef.current = true; setEditing(false); }
+  }
+
+  function handleBlur() {
+    if (cancelledRef.current) { cancelledRef.current = false; return; }
+    handleSave();
+  }
+
   return (
     <tr className={isLast ? "" : "border-b"}>
-      <td className="px-4 py-3 font-medium truncate">{screen.screen_name}</td>
+      <td className="px-4 py-3 font-medium">
+        {editing ? (
+          <input
+            ref={inputRef}
+            defaultValue={name}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            disabled={saving}
+            className="h-7 w-full rounded border border-input bg-transparent px-2 text-sm font-medium outline-none focus:border-ring focus:ring-2 focus:ring-ring/50 disabled:opacity-50"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="group flex items-center gap-1.5 w-full text-left min-w-0"
+          >
+            <span className="truncate">{name}</span>
+            <Pencil className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity" />
+          </button>
+        )}
+      </td>
       <td className="px-4 py-3">
         <StatusBadge status={screen.status} />
       </td>
