@@ -28,56 +28,79 @@ export async function POST(req: Request) {
   const cetvNetworkId = new ObjectId(process.env.CETV_NETWORK_ID);
   const installCode = await generateInstallCode(db);
 
+  const session = client.startSession();
   try {
-  const newLocation = await db.collection("locations").insertOne({
-    account_id: user.account_id,
-    network_id: cetvNetworkId,
-    name: name,
-    address: address,
-    city: city,
-    state: state,
-    zip: zip,
-    lat: lat,
-    long: long,
-    geo_point: geo_point,
-    created_at: now,
-    updated_at: now,
-    tag: "CETVNEWTESTING"
-  });
+    let locationId: ObjectId;
+    let screenId: ObjectId;
 
-  const locationId = newLocation.insertedId;
+    await session.withTransaction(async () => {
+      const newLocation = await db.collection("locations").insertOne(
+        {
+          account_id: user.account_id,
+          network_id: cetvNetworkId,
+          name: name,
+          address: address,
+          city: city,
+          state: state,
+          zip: zip,
+          lat: lat,
+          long: long,
+          geo_point: geo_point,
+          created_at: now,
+          updated_at: now,
+          tag: "CETVNEWTESTING",
+        },
+        { session }
+      );
 
-  const newScreen = await db.collection("screens").insertOne({
-    account_id: user.account_id,
-    location_id: locationId,
-    screen_name: `${name} Screen 1`,
-    location_name: name,
-    partner: "CETV",
-    state: null,
-    status: "new",
-    play_count: 0,
-    screen_size: null,
-    network_id: cetvNetworkId,
-    utc_offset: 0,
-    connected: false,
-    ad_serving_mode: "ad-supported",
-    layout_id: null,
-    playlist_id: null,
-    installCode,
-    audio_enabled: audio_enabled === true,
-    created_at: now,
-    updated_at: now,
-    tag: "CETVNEWTESTING"
-  });
+      locationId = newLocation.insertedId;
 
-  await db.collection("accounts").updateOne(
-    { _id: user.account_id },
-    { $set: { onboardingStep: 3, updated_at: now } }
-  );
+      const newScreen = await db.collection("screens").insertOne(
+        {
+          account_id: user.account_id,
+          location_id: locationId,
+          screen_name: `${name} Screen 1`,
+          location_name: name,
+          partner: "CETV",
+          state: null,
+          status: "new",
+          play_count: 0,
+          screen_size: null,
+          network_id: cetvNetworkId,
+          utc_offset: 0,
+          connected: false,
+          ad_serving_mode: "ad-supported",
+          layout_id: null,
+          playlist_id: null,
+          installCode,
+          audio_enabled: audio_enabled === true,
+          created_at: now,
+          updated_at: now,
+          tag: "CETVNEWTESTING",
+        },
+        { session }
+      );
 
-    return Response.json({ locationId: locationId.toString(), screenId: newScreen.insertedId.toString() }, { status: 201 });
+      screenId = newScreen.insertedId;
+
+      await db.collection("accounts").updateOne(
+        { _id: user.account_id },
+        { $set: { onboardingStep: 3, updated_at: now } },
+        { session }
+      );
+    });
+
+    return Response.json(
+      { locationId: locationId!.toString(), screenId: screenId!.toString() },
+      { status: 201 }
+    );
   } catch (err) {
-    console.error("[location route] DB write error:", err);
-    return Response.json({ error: err instanceof Error ? err.message : "Database write failed" }, { status: 500 });
+    console.error("[location route] transaction error:", err);
+    return Response.json(
+      { error: err instanceof Error ? err.message : "Database write failed" },
+      { status: 500 }
+    );
+  } finally {
+    await session.endSession();
   }
 }

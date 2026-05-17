@@ -50,24 +50,25 @@ export async function POST(req: Request) {
       return Response.json({ error: "Invalid promo code" }, { status: 400 });
     }
 
-    // Atomically claim one_time_use codes to prevent double-use
-    const promoCode = await db.collection("promo_codes").findOne({
-      _id: promoObjectId,
-      status: "active",
-    });
+    // Atomically fetch-and-claim one_time_use codes in a single operation.
+    // For reusable codes the update is a no-op write (status stays "active"),
+    // but we still use findOneAndUpdate so both types go through one round-trip
+    // and we get the document back to read its type.
+    const promoCode = await db.collection("promo_codes").findOneAndUpdate(
+      { _id: promoObjectId, status: "active" },
+      [
+        {
+          $set: {
+            status: { $cond: [{ $eq: ["$type", "one_time_use"] }, "used", "$status"] },
+            updated_at: now,
+          },
+        },
+      ],
+      { returnDocument: "before" }
+    );
 
     if (!promoCode) {
       return Response.json({ error: "Promo code is no longer available" }, { status: 400 });
-    }
-
-    if (promoCode.type === "one_time_use") {
-      const claimResult = await db.collection("promo_codes").updateOne(
-        { _id: promoObjectId, status: "active" },
-        { $set: { status: "used", updated_at: now } }
-      );
-      if (claimResult.modifiedCount === 0) {
-        return Response.json({ error: "Promo code is no longer available" }, { status: 400 });
-      }
     }
 
     await db.collection("device_orders").insertOne({

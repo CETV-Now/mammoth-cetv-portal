@@ -27,24 +27,30 @@ export async function GET() {
     .sort({ created_at: -1 })
     .toArray();
 
-  const enriched = await Promise.all(
-    playlists.map(async (playlist) => {
-      const screenCount = await db
-        .collection("screens")
-        .countDocuments({ account_id: account._id, playlist_id: playlist._id });
+  // Single query to get all screen counts — avoids N+1 countDocuments per playlist
+  const playlistIds = playlists.map((p) => p._id);
+  const assignedScreens = await db
+    .collection("screens")
+    .find({ account_id: account._id, playlist_id: { $in: playlistIds } })
+    .project({ playlist_id: 1 })
+    .toArray();
 
-      return {
-        ...playlist,
-        _id: playlist._id.toString(),
-        account_id: playlist.account_id.toString(),
-        content_count: (playlist.content ?? []).length,
-        channel_count: (playlist.channels ?? []).length,
-        screen_count: screenCount,
-        created_at: playlist.created_at?.toISOString() ?? null,
-        updated_at: playlist.updated_at?.toISOString() ?? null,
-      };
-    })
-  );
+  const screenCountByPlaylist = new Map<string, number>();
+  for (const screen of assignedScreens) {
+    const key = screen.playlist_id?.toString();
+    if (key) screenCountByPlaylist.set(key, (screenCountByPlaylist.get(key) ?? 0) + 1);
+  }
+
+  const enriched = playlists.map((playlist) => ({
+    ...playlist,
+    _id: playlist._id.toString(),
+    account_id: playlist.account_id.toString(),
+    content_count: (playlist.content ?? []).length,
+    channel_count: (playlist.channels ?? []).length,
+    screen_count: screenCountByPlaylist.get(playlist._id.toString()) ?? 0,
+    created_at: playlist.created_at?.toISOString() ?? null,
+    updated_at: playlist.updated_at?.toISOString() ?? null,
+  }));
 
   return Response.json(enriched);
 }
