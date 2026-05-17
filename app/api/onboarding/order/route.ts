@@ -11,10 +11,13 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { shippingAddress, paymentMethodId, screenId, locationId } = body;
+  const { shippingAddress, paymentMethodId, promoCodeId, screenId, locationId } = body;
 
-  if (!shippingAddress || !paymentMethodId) {
-    return Response.json({ error: "shippingAddress and paymentMethodId are required" }, { status: 400 });
+  if (!shippingAddress) {
+    return Response.json({ error: "shippingAddress is required" }, { status: 400 });
+  }
+  if (!paymentMethodId && !promoCodeId) {
+    return Response.json({ error: "paymentMethodId or promoCodeId is required" }, { status: 400 });
   }
 
   const client = await clientPromise;
@@ -32,45 +35,88 @@ export async function POST(req: Request) {
 
   const now = new Date();
 
-  let stripeCustomerId: string = account.stripeCustomerId;
-  if (!stripeCustomerId) {
-    const customer = await stripe.customers.create({
-      metadata: { clerkUserId: userId, accountId: account._id.toString() },
-    });
-    stripeCustomerId = customer.id;
-    await db.collection("accounts").updateOne(
-      { _id: account._id },
-      { $set: { stripeCustomerId, updated_at: now } }
-    );
-  }
-
-  const setupIntent = await stripe.setupIntents.create({
-    customer: stripeCustomerId,
-    payment_method: paymentMethodId,
-    confirm: true,
-    usage: "off_session",
-    automatic_payment_methods: { enabled: true, allow_redirects: "never" },
-  });
-
   const screenObjectId = screenId ? new ObjectId(screenId) : null;
   const screen = screenObjectId
     ? await db.collection("screens").findOne({ _id: screenObjectId })
     : null;
   const isAdFree = screen?.ad_serving_mode === "ad-free";
 
-  await db.collection("device_orders").insertOne({
-    account_id: user.account_id,
-    user_id: user._id,
-    screen_id: screenObjectId,
-    location_id: locationId ? new ObjectId(locationId) : null,
-    shippingAddress,
-    stripeCustomerId,
-    stripeSetupIntent: setupIntent.id,
-    stripeDeviceProductId: process.env.STRIPE_DEVICE_PRODUCT_ID,
-    status: "pending",
-    created_at: now,
-    updated_at: now,
-  });
+  // Promo code path — skip Stripe entirely
+  if (promoCodeId) {
+    let promoObjectId: ObjectId;
+    try {
+      promoObjectId = new ObjectId(promoCodeId);
+    } catch {
+      return Response.json({ error: "Invalid promo code" }, { status: 400 });
+    }
+
+    // Atomically claim one_time_use codes to prevent double-use
+    const promoCode = await db.collection("promo_codes").findOne({
+      _id: promoObjectId,
+      status: "active",
+    });
+
+    if (!promoCode) {
+      return Response.json({ error: "Promo code is no longer available" }, { status: 400 });
+    }
+
+    if (promoCode.type === "one_time_use") {
+      const claimResult = await db.collection("promo_codes").updateOne(
+        { _id: promoObjectId, status: "active" },
+        { $set: { status: "used", updated_at: now } }
+      );
+      if (claimResult.modifiedCount === 0) {
+        return Response.json({ error: "Promo code is no longer available" }, { status: 400 });
+      }
+    }
+
+    await db.collection("device_orders").insertOne({
+      account_id: user.account_id,
+      user_id: user._id,
+      screen_id: screenObjectId,
+      location_id: locationId ? new ObjectId(locationId) : null,
+      shippingAddress,
+      promo_code_id: promoObjectId,
+      status: "pending",
+      created_at: now,
+      updated_at: now,
+    });
+  } else {
+    // Stripe payment path
+    let stripeCustomerId: string = account.stripeCustomerId;
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        metadata: { clerkUserId: userId, accountId: account._id.toString() },
+      });
+      stripeCustomerId = customer.id;
+      await db.collection("accounts").updateOne(
+        { _id: account._id },
+        { $set: { stripeCustomerId, updated_at: now } }
+      );
+    }
+
+    const setupIntent = await stripe.setupIntents.create({
+      customer: stripeCustomerId,
+      payment_method: paymentMethodId,
+      confirm: true,
+      usage: "off_session",
+      automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+    });
+
+    await db.collection("device_orders").insertOne({
+      account_id: user.account_id,
+      user_id: user._id,
+      screen_id: screenObjectId,
+      location_id: locationId ? new ObjectId(locationId) : null,
+      shippingAddress,
+      stripeCustomerId,
+      stripeSetupIntent: setupIntent.id,
+      stripeDeviceProductId: process.env.STRIPE_DEVICE_PRODUCT_ID,
+      status: "pending",
+      created_at: now,
+      updated_at: now,
+    });
+  }
 
   await db.collection("accounts").updateOne(
     { _id: account._id },
