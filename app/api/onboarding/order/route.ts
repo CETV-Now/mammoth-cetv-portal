@@ -132,13 +132,29 @@ export async function POST(req: Request) {
   );
 
   const clerk = await clerkClient();
-  await clerk.users.updateUserMetadata(userId, {
-    publicMetadata: { onboardingComplete: true },
-  });
+  const [clerkUser] = await Promise.all([
+    clerk.users.getUser(userId),
+    clerk.users.updateUserMetadata(userId, {
+      publicMetadata: { onboardingComplete: true },
+    }),
+  ]);
+
+  const primaryEmail = clerkUser.emailAddresses.find(
+    (e) => e.id === clerkUser.primaryEmailAddressId
+  )?.emailAddress ?? "";
 
   tasks.trigger("sync-mako", {}).catch((err) =>
     console.error("[onboarding/order] syncMako trigger failed:", err)
   );
+
+  tasks
+    .trigger("send-welcome-email", {
+      account_id: account._id.toString(),
+      first_name: clerkUser.firstName ?? "",
+      last_name: clerkUser.lastName ?? "",
+      email_address: primaryEmail,
+    })
+    .catch((err) => console.error("[onboarding/order] sendWelcomeEmail trigger failed:", err));
 
   return Response.json({ success: true });
 }
