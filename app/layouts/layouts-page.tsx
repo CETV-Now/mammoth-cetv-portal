@@ -108,7 +108,8 @@ function LayoutMenu({
   const router = useRouter();
   const [deleting, setDeleting] = React.useState(false);
   const isAssigned = layout.screensAssigned > 0;
-  const previewUrl = `https://player-preview.cetvnow.network?layout_id=${layout._id}${sampleImageUrl ? `&sample_image=${encodeURIComponent(sampleImageUrl)}` : ""}`;
+  const baseUrl = process.env.NEXT_PUBLIC_PREVIEW_PLAYER_URL ?? "http://localhost:5173";
+  const previewUrl = `${baseUrl}?layout_id=${layout._id}${sampleImageUrl ? `&sample_image=${encodeURIComponent(sampleImageUrl)}` : ""}`;
 
   async function handleDelete() {
     setDeleting(true);
