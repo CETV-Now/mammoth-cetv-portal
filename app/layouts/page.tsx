@@ -17,7 +17,7 @@ export default async function LayoutsPageRoute() {
   const account = await db.collection("accounts").findOne({ _id: user.account_id });
   if (!account?.onboardingComplete) redirect("/onboarding");
 
-  const [rawLayouts, rawScreens] = await Promise.all([
+  const [rawLayouts, rawScreens, sampleImageDoc] = await Promise.all([
     db
       .collection("screen_layouts")
       .find({ account_id: user.account_id })
@@ -28,6 +28,12 @@ export default async function LayoutsPageRoute() {
       .find({ account_id: user.account_id, status: { $ne: "deleted" }, layout_id: { $exists: true, $ne: null } })
       .project({ layout_id: 1 })
       .toArray(),
+    db
+      .collection("content")
+      .findOne(
+        { account_id: account._id, status: "active", mime_type: { $regex: /^image\// } },
+        { projection: { url: 1 }, sort: { created_at: -1 } }
+      ),
   ]);
 
   const screenCountByLayout = new Map<string, number>();
@@ -45,5 +51,7 @@ export default async function LayoutsPageRoute() {
     hasZones: Array.isArray(l.zone_data) && l.zone_data.length > 0,
   }));
 
-  return <LayoutsPage layouts={layouts} />;
+  const sampleImageUrl = (sampleImageDoc?.url as string) ?? null;
+
+  return <LayoutsPage layouts={layouts} sampleImageUrl={sampleImageUrl} />;
 }

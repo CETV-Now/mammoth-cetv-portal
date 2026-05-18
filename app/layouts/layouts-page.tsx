@@ -30,7 +30,7 @@ interface LayoutRow {
   hasZones: boolean;
 }
 
-export function LayoutsPage({ layouts: initial }: { layouts: LayoutRow[] }) {
+export function LayoutsPage({ layouts: initial, sampleImageUrl }: { layouts: LayoutRow[]; sampleImageUrl?: string | null }) {
   const router = useRouter();
   const [layouts, setLayouts] = React.useState(initial);
 
@@ -84,7 +84,7 @@ export function LayoutsPage({ layouts: initial }: { layouts: LayoutRow[] }) {
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">{layout.screensAssigned}</td>
                   <td className="px-4 py-3 text-right">
-                    <LayoutMenu layout={layout} onDeleted={handleDeleted} />
+                    <LayoutMenu layout={layout} onDeleted={handleDeleted} sampleImageUrl={sampleImageUrl} />
                   </td>
                 </tr>
               ))}
@@ -99,13 +99,16 @@ export function LayoutsPage({ layouts: initial }: { layouts: LayoutRow[] }) {
 function LayoutMenu({
   layout,
   onDeleted,
+  sampleImageUrl,
 }: {
   layout: LayoutRow;
   onDeleted: (id: string) => void;
+  sampleImageUrl?: string | null;
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = React.useState(false);
   const isAssigned = layout.screensAssigned > 0;
+  const previewUrl = `https://player-preview.cetvnow.network?layout_id=${layout._id}${sampleImageUrl ? `&sample_image=${encodeURIComponent(sampleImageUrl)}` : ""}`;
 
   async function handleDelete() {
     setDeleting(true);
@@ -134,7 +137,7 @@ function LayoutMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem
-          onSelect={() => window.open(`https://player-preview.cetvnow.network?layout_id=${layout._id}`, "_blank")}
+          onSelect={() => window.open(previewUrl, "_blank")}
           disabled={!layout.hasZones}
         >
           Preview Layout
