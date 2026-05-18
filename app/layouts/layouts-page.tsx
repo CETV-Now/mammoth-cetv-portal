@@ -137,10 +137,11 @@ function LayoutMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem asChild disabled={!layout.hasZones}>
-          <a href={previewUrl} target="_blank" rel="noopener noreferrer">
-            Preview Layout
-          </a>
+        <DropdownMenuItem
+          disabled={!layout.hasZones}
+          onSelect={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}
+        >
+          Preview Layout
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => router.push(`/layouts/${layout._id}/edit`)}>
           Edit
