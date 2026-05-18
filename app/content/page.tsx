@@ -41,5 +41,7 @@ export default async function ContentPage() {
     thumbnail_url: item.thumbnail_url ?? null,
   }));
 
-  return <ContentLibrary initialItems={items} />;
+  const showAiGeneration = process.env.NEXT_SHOW_AI_CONTENT_CREATION === "true";
+
+  return <ContentLibrary initialItems={items} showAiGeneration={showAiGeneration} />;
 }

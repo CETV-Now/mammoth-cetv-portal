@@ -39,6 +39,7 @@ import {
 export interface ScreenRow {
   _id: string;
   screen_name: string;
+  location_id: string;
   location_name: string;
   status: string;
   connected: boolean;
@@ -77,17 +78,40 @@ export interface LocationOption {
 interface ScreensPageProps {
   locationGroups: LocationGroup[];
   locations: LocationOption[];
+  alwaysCharge: boolean;
 }
 
-export function ScreensPage({ locationGroups: initial, locations }: ScreensPageProps) {
+export function ScreensPage({ locationGroups: initial, locations, alwaysCharge }: ScreensPageProps) {
   const router = useRouter();
   const [locationGroups, setLocationGroups] = React.useState(initial);
   const [editingLocation, setEditingLocation] = React.useState<{ id: string; name: string; screenCount: number } | null>(null);
   const [addScreenOpen, setAddScreenOpen] = React.useState(false);
+  const [selectMode, setSelectMode] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [bulkPlaylistOpen, setBulkPlaylistOpen] = React.useState(false);
+  const [bulkLayoutOpen, setBulkLayoutOpen] = React.useState(false);
 
   React.useEffect(() => {
     setLocationGroups(initial);
   }, [initial]);
+
+  const allScreenIds = React.useMemo(
+    () => locationGroups.flatMap((g) => g.screens.map((s) => s._id)),
+    [locationGroups]
+  );
+
+  function toggleScreen(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
 
   function handleLocationSaved(id: string, newName: string) {
     setLocationGroups((prev) =>
@@ -96,10 +120,15 @@ export function ScreensPage({ locationGroups: initial, locations }: ScreensPageP
   }
 
   return (
-    <div className="flex flex-col gap-8 pt-4">
+    <div className="flex flex-col gap-8 pt-4 pb-24">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Locations &amp; Screens</h1>
-        <Button onClick={() => setAddScreenOpen(true)}>Add Screen</Button>
+        <div className="flex gap-2">
+          {!selectMode && (
+            <Button variant="outline" onClick={() => setSelectMode(true)}>Select</Button>
+          )}
+          <Button onClick={() => setAddScreenOpen(true)}>Add Screen</Button>
+        </div>
       </div>
 
       {locationGroups.length === 0 ? (
@@ -111,6 +140,10 @@ export function ScreensPage({ locationGroups: initial, locations }: ScreensPageP
           <LocationSection
             key={group.location_id}
             group={group}
+            alwaysCharge={alwaysCharge}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleScreen={toggleScreen}
             onEditLocation={() => setEditingLocation({ id: group.location_id, name: group.location_name, screenCount: group.screens.length })}
           />
         ))
@@ -129,15 +162,71 @@ export function ScreensPage({ locationGroups: initial, locations }: ScreensPageP
         locations={locations}
         onSaved={() => router.refresh()}
       />
+
+      <BulkSetPlaylistModal
+        screenIds={Array.from(selectedIds)}
+        open={bulkPlaylistOpen}
+        onOpenChange={setBulkPlaylistOpen}
+        onSaved={() => { router.refresh(); exitSelectMode(); }}
+      />
+
+      <BulkSetLayoutModal
+        screenIds={Array.from(selectedIds)}
+        open={bulkLayoutOpen}
+        onOpenChange={setBulkLayoutOpen}
+        onSaved={() => { router.refresh(); exitSelectMode(); }}
+      />
+
+      {selectMode && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background shadow-lg px-6 py-4 flex items-center gap-4">
+          <span className="text-sm font-medium">
+            {selectedIds.size} screen{selectedIds.size !== 1 ? "s" : ""} selected
+          </span>
+          <button
+            type="button"
+            className="text-sm text-primary hover:underline"
+            onClick={() => {
+              const allSelected = allScreenIds.every((id) => selectedIds.has(id));
+              setSelectedIds(allSelected ? new Set() : new Set(allScreenIds));
+            }}
+          >
+            {allScreenIds.every((id) => selectedIds.has(id)) ? "Deselect all" : "Select all"}
+          </button>
+          <div className="flex-1" />
+          <Button
+            variant="outline"
+            disabled={selectedIds.size === 0}
+            onClick={() => setBulkPlaylistOpen(true)}
+          >
+            Set Playlist
+          </Button>
+          <Button
+            variant="outline"
+            disabled={selectedIds.size === 0}
+            onClick={() => setBulkLayoutOpen(true)}
+          >
+            Set Layout
+          </Button>
+          <Button variant="ghost" onClick={exitSelectMode}>Cancel</Button>
+        </div>
+      )}
     </div>
   );
 }
 
 function LocationSection({
   group,
+  alwaysCharge,
+  selectMode,
+  selectedIds,
+  onToggleScreen,
   onEditLocation,
 }: {
   group: LocationGroup;
+  alwaysCharge: boolean;
+  selectMode: boolean;
+  selectedIds: Set<string>;
+  onToggleScreen: (id: string) => void;
   onEditLocation: () => void;
 }) {
   return (
@@ -180,6 +269,10 @@ function LocationSection({
                 <ScreenRow
                   key={screen._id}
                   screen={screen}
+                  alwaysCharge={alwaysCharge}
+                  selectMode={selectMode}
+                  selected={selectedIds.has(screen._id)}
+                  onToggle={() => onToggleScreen(screen._id)}
                   isLast={index === group.screens.length - 1}
                 />
               ))
@@ -191,7 +284,7 @@ function LocationSection({
   );
 }
 
-function ScreenRow({ screen, isLast }: { screen: ScreenRow; isLast: boolean }) {
+function ScreenRow({ screen, alwaysCharge, selectMode, selected, onToggle, isLast }: { screen: ScreenRow; alwaysCharge: boolean; selectMode: boolean; selected: boolean; onToggle: () => void; isLast: boolean }) {
   const router = useRouter();
   const [editing, setEditing] = React.useState(false);
   const [name, setName] = React.useState(screen.screen_name);
@@ -241,9 +334,21 @@ function ScreenRow({ screen, isLast }: { screen: ScreenRow; isLast: boolean }) {
   }
 
   return (
-    <tr className={isLast ? "" : "border-b"}>
+    <tr
+      className={[isLast ? "" : "border-b", selectMode ? "cursor-pointer hover:bg-muted/30" : ""].join(" ")}
+      onClick={selectMode ? onToggle : undefined}
+    >
       <td className="px-4 py-3 font-medium">
-        {editing ? (
+        {selectMode ? (
+          <div className="flex items-center gap-2.5">
+            <Checkbox
+              checked={selected}
+              onCheckedChange={onToggle}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <span className="truncate">{name}</span>
+          </div>
+        ) : editing ? (
           <input
             ref={inputRef}
             defaultValue={name}
@@ -282,7 +387,7 @@ function ScreenRow({ screen, isLast }: { screen: ScreenRow; isLast: boolean }) {
         )}
       </td>
       <td className="px-4 py-3 text-right">
-        <ScreenMenu screen={screen} />
+        {!selectMode && <ScreenMenu screen={screen} alwaysCharge={alwaysCharge} />}
       </td>
     </tr>
   );
@@ -290,7 +395,7 @@ function ScreenRow({ screen, isLast }: { screen: ScreenRow; isLast: boolean }) {
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "active") return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>;
-  if (status === "new") return <Badge variant="secondary">New</Badge>;
+  if (status === "new") return <Badge variant="secondary">Pending</Badge>;
   return <Badge variant="outline">{status}</Badge>;
 }
 
@@ -299,7 +404,7 @@ function ConnectedBadge({ connected }: { connected: boolean }) {
   return <Badge variant="secondary">Offline</Badge>;
 }
 
-function ScreenMenu({ screen }: { screen: ScreenRow }) {
+function ScreenMenu({ screen, alwaysCharge }: { screen: ScreenRow; alwaysCharge: boolean }) {
   const router = useRouter();
   const [installOpen, setInstallOpen] = React.useState(false);
   const [detailsOpen, setDetailsOpen] = React.useState(false);
@@ -309,6 +414,7 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
   const [installCodeLoading, setInstallCodeLoading] = React.useState(false);
   const [activating, setActivating] = React.useState(false);
   const [activated, setActivated] = React.useState(false);
+  const [orderDeviceOpen, setOrderDeviceOpen] = React.useState(false);
   const pinRef = React.useRef<HTMLInputElement>(null);
 
   function handleInstallOpenChange(open: boolean) {
@@ -342,6 +448,9 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
         <DropdownMenuContent align="end">
           {screen.status === "new" && (
             <DropdownMenuItem onSelect={() => setInstallOpen(true)} className="text-green-600 focus:text-green-600">Activate</DropdownMenuItem>
+          )}
+          {screen.status === "new" && (
+            <DropdownMenuItem onSelect={() => setOrderDeviceOpen(true)}>Order Device</DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={() => setDetailsOpen(true)}>Screen Details</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setSetPlaylistOpen(true)}>Set Playlist</DropdownMenuItem>
@@ -444,6 +553,13 @@ function ScreenMenu({ screen }: { screen: ScreenRow }) {
         screen={screen}
         open={setLayoutOpen}
         onOpenChange={setSetLayoutOpen}
+      />
+
+      <OrderDeviceModal
+        screen={screen}
+        alwaysCharge={alwaysCharge}
+        open={orderDeviceOpen}
+        onOpenChange={setOrderDeviceOpen}
       />
     </>
   );
@@ -822,18 +938,6 @@ function ScreenDetailsModal({
                     <p className="w-full text-xs text-muted-foreground">{offlineReason}</p>
                   )}
                 </div>
-                <div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="gap-1.5"
-                    disabled={deleting}
-                    onClick={handleDelete}
-                  >
-                    <Trash2 className="size-4" />
-                    {deleting ? "Deleting..." : "Delete Screen"}
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -989,6 +1093,279 @@ function SetPlaylistModal({
               {saving ? "Saving..." : "Save"}
             </Button>
           </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function OrderDeviceModal({
+  screen,
+  alwaysCharge,
+  open,
+  onOpenChange,
+}: {
+  screen: ScreenRow;
+  alwaysCharge: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const router = useRouter();
+  const [shippingAddress, setShippingAddress] = React.useState<ShippingAddress>({ line1: "", city: "", state: "", zip: "" });
+  const [loading, setLoading] = React.useState(false);
+  const devicePriceCents = parseInt(process.env.NEXT_PUBLIC_DEVICE_PRICE ?? "0", 10);
+  const devicePriceDisplay = `$${(devicePriceCents / 100).toFixed(2)}`;
+
+  React.useEffect(() => {
+    if (!open) {
+      setShippingAddress({ line1: "", city: "", state: "", zip: "" });
+      return;
+    }
+    setLoading(true);
+    fetch(`/api/locations/${screen.location_id}`)
+      .then((r) => r.json())
+      .then((data) => setShippingAddress({ line1: data.address ?? "", city: data.city ?? "", state: data.state ?? "", zip: data.zip ?? "" }))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [open, screen.location_id]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Order Device</DialogTitle>
+        </DialogHeader>
+        {loading ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">Loading...</div>
+        ) : (
+          <>
+            <div className="rounded-md border bg-muted/50 px-4 py-3 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">CETV Device (1×)</span>
+              <span className="font-semibold">{devicePriceDisplay}</span>
+            </div>
+            {!alwaysCharge && (
+              <p className="text-sm text-muted-foreground">
+                We will not charge you for the device if you activate within 15 days of receiving it and keep it online for 30 days.
+              </p>
+            )}
+            <Elements stripe={stripePromise}>
+              <OrderForm
+                shippingAddress={shippingAddress}
+                onShippingChange={setShippingAddress}
+                screenId={screen._id}
+                locationId={screen.location_id}
+                onSuccess={() => { onOpenChange(false); router.refresh(); }}
+                onBack={() => onOpenChange(false)}
+              />
+            </Elements>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function BulkSetPlaylistModal({
+  screenIds,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  screenIds: string[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: () => void;
+}) {
+  const [playlists, setPlaylists] = React.useState<PlaylistOption[]>([]);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!open) { setSelectedId(null); return; }
+    setLoading(true);
+    fetch("/api/playlists")
+      .then((r) => r.json())
+      .then((data) => setPlaylists(data))
+      .catch(() => toast.error("Failed to load playlists"))
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  async function handleSave() {
+    if (!selectedId) return;
+    setSaving(true);
+    try {
+      await Promise.all(
+        screenIds.map((id) =>
+          fetch(`/api/screens/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ playlist_id: selectedId }),
+          }).then((r) => { if (!r.ok) throw new Error(); })
+        )
+      );
+      toast.success(`Playlist assigned to ${screenIds.length} screen${screenIds.length !== 1 ? "s" : ""}`);
+      onOpenChange(false);
+      onSaved();
+    } catch {
+      toast.error("Failed to assign playlist to one or more screens");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Set Playlist</DialogTitle>
+          <p className="text-sm text-muted-foreground pt-1">
+            Assign a playlist to {screenIds.length} selected screen{screenIds.length !== 1 ? "s" : ""}.
+          </p>
+        </DialogHeader>
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Loading playlists...</p>
+        ) : playlists.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">No playlists found.</p>
+        ) : (
+          <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
+            {playlists.map((playlist) => {
+              const isSelected = playlist._id === selectedId;
+              return (
+                <button
+                  key={playlist._id}
+                  type="button"
+                  onClick={() => setSelectedId(isSelected ? null : playlist._id)}
+                  className={[
+                    "flex items-start gap-3 rounded-md border p-3 text-left transition-colors",
+                    isSelected ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40 hover:bg-muted/40",
+                  ].join(" ")}
+                >
+                  <div className={["mt-0.5 size-4 shrink-0 rounded-full border-2 flex items-center justify-center", isSelected ? "border-primary" : "border-muted-foreground/40"].join(" ")}>
+                    {isSelected && <div className="size-2 rounded-full bg-primary" />}
+                  </div>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-sm font-medium truncate">{playlist.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {playlist.content_count} item{playlist.content_count !== 1 ? "s" : ""}
+                      {playlist.channel_count > 0 ? ` · ${playlist.channel_count} channel${playlist.channel_count !== 1 ? "s" : ""}` : ""}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving || !selectedId || loading}>
+            {saving ? "Saving..." : "Apply"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function BulkSetLayoutModal({
+  screenIds,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  screenIds: string[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: () => void;
+}) {
+  const [layouts, setLayouts] = React.useState<LayoutOption[]>([]);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!open) { setSelectedId(null); return; }
+    setLoading(true);
+    fetch("/api/layouts")
+      .then((r) => r.json())
+      .then((data) => setLayouts(data))
+      .catch(() => toast.error("Failed to load layouts"))
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  async function handleSave() {
+    if (!selectedId) return;
+    setSaving(true);
+    try {
+      await Promise.all(
+        screenIds.map((id) =>
+          fetch(`/api/screens/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ layout_id: selectedId }),
+          }).then((r) => { if (!r.ok) throw new Error(); })
+        )
+      );
+      toast.success(`Layout assigned to ${screenIds.length} screen${screenIds.length !== 1 ? "s" : ""}`);
+      onOpenChange(false);
+      onSaved();
+    } catch {
+      toast.error("Failed to assign layout to one or more screens");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Set Layout</DialogTitle>
+          <p className="text-sm text-muted-foreground pt-1">
+            Assign a layout to {screenIds.length} selected screen{screenIds.length !== 1 ? "s" : ""}.
+          </p>
+        </DialogHeader>
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Loading layouts...</p>
+        ) : layouts.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">No layouts found.</p>
+        ) : (
+          <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
+            {layouts.map((layout) => {
+              const isSelected = layout._id === selectedId;
+              return (
+                <button
+                  key={layout._id}
+                  type="button"
+                  onClick={() => setSelectedId(isSelected ? null : layout._id)}
+                  className={[
+                    "flex items-start gap-3 rounded-md border p-3 text-left transition-colors",
+                    isSelected ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40 hover:bg-muted/40",
+                  ].join(" ")}
+                >
+                  <div className={["mt-0.5 size-4 shrink-0 rounded-full border-2 flex items-center justify-center", isSelected ? "border-primary" : "border-muted-foreground/40"].join(" ")}>
+                    {isSelected && <div className="size-2 rounded-full bg-primary" />}
+                  </div>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-sm font-medium truncate">{layout.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {templateLabels[layout.template] ?? layout.template}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving || !selectedId || loading}>
+            {saving ? "Saving..." : "Apply"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -1641,24 +2018,13 @@ function EditLocationModal({
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-1">
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleting || (location?.screenCount ?? 0) > 0}
-              onClick={handleDelete}
-              title={(location?.screenCount ?? 0) > 0 ? "Remove all screens before deleting this location" : undefined}
-            >
-              {deleting ? "Deleting..." : "Delete Location"}
+          <div className="flex justify-end gap-3 pt-1">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
             </Button>
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={saving}>
-                {saving ? "Saving..." : "Save"}
-              </Button>
-            </div>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
           </div>
         </form>
       </DialogContent>

@@ -45,12 +45,15 @@ export default async function OnboardingPage() {
     onboardingComplete: account.onboardingComplete ?? false,
   };
 
+  const alwaysCharge = process.env.NEXT_DEVICE_ALWAYS_CHARGE === "true";
+
   return (
     <OnboardingWizard
       step={step}
       account={serializedAccount}
       firstName={clerkUser.firstName ?? ""}
       lastName={clerkUser.lastName ?? ""}
+      alwaysCharge={alwaysCharge}
     />
   );
 }

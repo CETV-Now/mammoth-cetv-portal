@@ -36,8 +36,10 @@ export default async function DashboardPage() {
 
         <p className="mt-4 text-muted-foreground leading-relaxed">
           While you wait for your device to arrive, you can start adding images and
-          videos to your library and creating playlists. You can also preview the
-          licensed content that is available to play in your location.
+          videos to your library and creating playlists.
+        </p>
+        <p className="mt-4 text-muted-foreground leading-relaxed">
+          You can also preview the licensed content that is available to play in your location.
         </p>
       </div>
     </div>

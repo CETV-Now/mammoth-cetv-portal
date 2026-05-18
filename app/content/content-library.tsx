@@ -46,12 +46,13 @@ export interface ContentItem {
 
 interface ContentLibraryProps {
   initialItems: ContentItem[];
+  showAiGeneration: boolean;
 }
 
 type TypeFilter = "all" | "video" | "image";
 type SortKey = "name_asc" | "name_desc" | "date_asc" | "date_desc";
 
-export function ContentLibrary({ initialItems }: ContentLibraryProps) {
+export function ContentLibrary({ initialItems, showAiGeneration }: ContentLibraryProps) {
   const [items, setItems] = React.useState<ContentItem[]>(initialItems);
   const [typeFilter, setTypeFilter] = React.useState<TypeFilter>("all");
   const [sort, setSort] = React.useState<SortKey>("name_asc");
@@ -161,7 +162,7 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-24">
         <p className="text-muted-foreground text-sm">You haven&apos;t uploaded anything yet.</p>
         <div className="flex items-center gap-2">
-          <GenerateDialog onGenerated={handleUploaded} />
+          {showAiGeneration && <GenerateDialog onGenerated={handleUploaded} />}
           <UploadDialog onUploaded={handleUploaded} />
         </div>
       </div>
@@ -180,7 +181,7 @@ export function ContentLibrary({ initialItems }: ContentLibraryProps) {
         <h1 className="text-xl font-semibold">Content Library</h1>
         {!showArchived && (
           <div className="flex items-center gap-2">
-            <GenerateDialog onGenerated={handleUploaded} />
+            {showAiGeneration && <GenerateDialog onGenerated={handleUploaded} />}
             <UploadDialog onUploaded={handleUploaded} />
           </div>
         )}

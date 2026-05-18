@@ -55,7 +55,7 @@ const navigationGroups: NavigationGroup[] = [
         icon: Tv,
       },
       {
-        title: "Layouts",
+        title: "Screen Layouts",
         url: "/layouts",
         icon: Layout,
       },
@@ -82,12 +82,8 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg">
-              <div className="flex size-8 items-center justify-center shrink-0">
-                <Image src="/cetv_logo.png" alt="CETV" width={32} height={32} className="rounded-lg object-contain" />
-              </div>
-              <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-semibold">CETV Now!</span>
-                <span className="text-xs text-muted-foreground">v. 1.0.0</span>
+              <div className="flex size-14 items-center justify-center shrink-0">
+                <Image src="/cetv_logo.png" alt="CETV" width={56} height={56} className="rounded-lg object-contain" />
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>

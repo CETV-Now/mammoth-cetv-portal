@@ -17,6 +17,7 @@ interface OnboardingWizardProps {
   account: Account;
   firstName: string;
   lastName: string;
+  alwaysCharge: boolean;
 }
 
 const STEP_LABELS = [
@@ -25,7 +26,7 @@ const STEP_LABELS = [
   "Order Device",
 ];
 
-export function OnboardingWizard({ step: initialStep, account, firstName, lastName }: OnboardingWizardProps) {
+export function OnboardingWizard({ step: initialStep, account, firstName, lastName, alwaysCharge }: OnboardingWizardProps) {
   const [step, setStep] = useState(initialStep);
   const [screenId, setScreenId] = useState<string | null>(null);
 
@@ -80,7 +81,7 @@ export function OnboardingWizard({ step: initialStep, account, firstName, lastNa
         <div className="bg-card rounded-xl border shadow p-6">
           {step === 1 && <StepAbout onComplete={advance} firstName={firstName} lastName={lastName} />}
           {step === 2 && <StepLocation onComplete={completeLocation} />}
-          {step === 3 && <StepDeviceOrder />}
+          {step === 3 && <StepDeviceOrder alwaysCharge={alwaysCharge} />}
         </div>
       </div>
     </div>

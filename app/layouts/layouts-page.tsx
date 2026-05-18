@@ -46,13 +46,13 @@ export function LayoutsPage({ layouts: initial }: { layouts: LayoutRow[] }) {
     <div className="flex flex-col gap-6 pt-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1 max-w-2xl">
-          <h1 className="text-xl font-semibold">Layouts</h1>
+          <h1 className="text-xl font-semibold">Screen Layouts</h1>
           <p className="text-sm text-muted-foreground">
-            Layouts let you determine how your screen content is presented to your customers. You can choose from three preset layout templates and customize each to fit your needs. Screens use the default layout until you assign a different layout to it, so you can create and customize your layouts ahead of time and then assign them to your screens when you&apos;re ready.
+            Screen Layouts let you determine how your screen content is presented to your customers. You can choose from three preset layout templates and customize each to fit your needs. Screens use the default layout until you assign a different layout to it, so you can create and customize your layouts ahead of time and then assign them to your screens when you&apos;re ready.
           </p>
         </div>
         <Button onClick={() => router.push("/layouts/new")} className="shrink-0">
-          Create Layout
+          Create Screen Layout
         </Button>
       </div>
 

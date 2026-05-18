@@ -100,7 +100,7 @@ const widgetOptions: WidgetOption[] = [
   {
     id: "rotating-text",
     name: "Rotating Text",
-    description: "3–4 text panels that rotate automatically on a timer.",
+    description: "3–4 text banners that rotate automatically on a timer.",
     icon: (
       <svg viewBox="0 0 20 20" className="size-5 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="2" y="4" width="16" height="5" rx="1" />
@@ -299,7 +299,7 @@ function RotatingTextConfig({ panels, onPanelsChange, bgColor, onBgColorChange, 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label>Panels</Label>
+        <Label>Banners</Label>
         <div className="flex flex-col gap-2">
           {panels.map((panel, index) => (
             <div key={index} className="flex items-center gap-2">
@@ -308,7 +308,7 @@ function RotatingTextConfig({ panels, onPanelsChange, bgColor, onBgColorChange, 
                 <Input
                   value={panel}
                   onChange={(e) => updatePanel(index, e.target.value)}
-                  placeholder={`Panel ${index + 1} text...`}
+                  placeholder={`Banner ${index + 1} text...`}
                   maxLength={ROTATE_PANEL_LIMIT}
                 />
                 <span className={cn("text-xs tabular-nums self-end", panel.length >= ROTATE_PANEL_LIMIT ? "text-destructive" : "text-muted-foreground")}>
@@ -327,7 +327,7 @@ function RotatingTextConfig({ panels, onPanelsChange, bgColor, onBgColorChange, 
       {filledPanels.length > 0 && (
         <div className="flex flex-col gap-1">
           <div
-            className="rounded px-3 py-2 text-sm font-medium truncate transition-opacity"
+            className="rounded px-3 py-2 text-sm font-medium truncate transition-opacity text-center"
             style={{ backgroundColor: bgColor, color: textColor, fontFamily: font, opacity: visible ? 1 : 0, transitionDuration: `${FADE_DURATION}ms` }}
           >
             {filledPanels[activeIndex]}

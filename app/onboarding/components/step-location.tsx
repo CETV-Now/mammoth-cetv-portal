@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -187,13 +186,24 @@ export function StepLocation({ onComplete }: { onComplete: (screenId: string) =>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="audio-enabled"
-          checked={audioEnabled}
-          onCheckedChange={(v) => setAudioEnabled(!!v)}
-        />
-        <Label htmlFor="audio-enabled">Does this screen have sound?</Label>
+      <div className="space-y-2">
+        <Label>Does this screen have sound?</Label>
+        <div className="flex rounded-md border overflow-hidden text-sm w-fit">
+          <button
+            type="button"
+            onClick={() => setAudioEnabled(false)}
+            className={["px-5 py-2 font-medium transition-colors", !audioEnabled ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"].join(" ")}
+          >
+            No
+          </button>
+          <button
+            type="button"
+            onClick={() => setAudioEnabled(true)}
+            className={["px-5 py-2 font-medium transition-colors border-l", audioEnabled ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"].join(" ")}
+          >
+            Yes
+          </button>
+        </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={isSubmitting || !mapsReady}>

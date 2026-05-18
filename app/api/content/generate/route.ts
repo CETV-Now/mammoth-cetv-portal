@@ -35,9 +35,18 @@ export async function POST(req: Request) {
   const account = await db.collection("accounts").findOne({ _id: user.account_id });
   if (!account) return Response.json({ error: "Account not found" }, { status: 404 });
 
+  const businessContext = account.business_context as string | undefined;
+  const fullPrompt = [
+    "Digital signage advertisement for a widescreen TV display. Professional, modern, high-quality.",
+    businessContext ? `Business context: ${businessContext}` : null,
+    prompt,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   const result = await openai.images.generate({
     model: "gpt-image-1",
-    prompt: `Digital signage advertisement for a widescreen TV display. Professional, modern, high-quality. ${prompt}`,
+    prompt: fullPrompt,
     size: "1536x1024",
     quality: "high",
   });

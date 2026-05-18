@@ -421,6 +421,18 @@ export function PlaylistForm({
                   </Label>
                 </div>
               ))}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => {
+                    const allSelected = screens.every((s) => selectedScreenIds.includes(s._id));
+                    setSelectedScreenIds(allSelected ? [] : screens.map((s) => s._id));
+                  }}
+                >
+                  {screens.every((s) => selectedScreenIds.includes(s._id)) ? "Deselect all" : "Assign to all"}
+                </button>
+              </div>
             </div>
           )}
         </div>

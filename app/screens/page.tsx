@@ -81,6 +81,7 @@ export default async function ScreensPageRoute() {
     const screen: ScreenRow = {
       _id: s._id.toString(),
       screen_name: s.screen_name,
+      location_id: locId,
       location_name: locName,
       status: s.status ?? "new",
       connected: s.connected ?? false,
@@ -98,6 +99,7 @@ export default async function ScreensPageRoute() {
   }
 
   const locationGroups = Array.from(groupMap.values());
+  const alwaysCharge = process.env.NEXT_DEVICE_ALWAYS_CHARGE === "true";
 
-  return <ScreensPage locationGroups={locationGroups} locations={locations} />;
+  return <ScreensPage locationGroups={locationGroups} locations={locations} alwaysCharge={alwaysCharge} />;
 }

@@ -149,6 +149,10 @@ export async function POST(req: Request) {
   );
 
   tasks
+    .trigger("crawl-business-context", { account_id: account._id.toString() })
+    .catch((err) => console.error("[onboarding/order] crawlBusinessContext trigger failed:", err));
+
+  tasks
     .trigger("send-welcome-email", {
       account_id: account._id.toString(),
       first_name: clerkUser.firstName ?? "",

@@ -29,7 +29,7 @@ interface LocationData {
 
 type PromoStatus = "idle" | "checking" | "valid" | "invalid";
 
-function OrderForm({ locationData }: { locationData: LocationData }) {
+function OrderForm({ locationData, alwaysCharge }: { locationData: LocationData; alwaysCharge: boolean }) {
   const stripe = useStripe();
   const elements = useElements();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -140,12 +140,26 @@ function OrderForm({ locationData }: { locationData: LocationData }) {
     }
   }
 
+  const devicePriceCents = parseInt(process.env.NEXT_PUBLIC_DEVICE_PRICE ?? "0", 10);
+  const devicePriceDisplay = `$${(devicePriceCents / 100).toFixed(2)}`;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold">Order Your Device</h2>
         <p className="text-sm text-muted-foreground mt-1">Enter your shipping address and payment details to complete your order.</p>
       </div>
+
+      <div className="rounded-md border bg-muted/50 px-4 py-3 flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">CETV Device (1×)</span>
+        <span className="font-semibold">{devicePriceDisplay}</span>
+      </div>
+
+      {!alwaysCharge && (
+        <p className="text-sm text-muted-foreground">
+          We will not charge you for the device if you activate within 15 days of receiving it and keep it online for 30 days.
+        </p>
+      )}
 
       <div className="space-y-4">
         <h3 className="text-sm font-medium">Shipping Address</h3>
@@ -270,7 +284,7 @@ function OrderForm({ locationData }: { locationData: LocationData }) {
   );
 }
 
-export function StepDeviceOrder() {
+export function StepDeviceOrder({ alwaysCharge }: { alwaysCharge: boolean }) {
   const [locationData, setLocationData] = useState<LocationData>({});
   const [loading, setLoading] = useState(true);
 
@@ -290,7 +304,7 @@ export function StepDeviceOrder() {
 
   return (
     <Elements stripe={stripePromise}>
-      <OrderForm locationData={locationData} />
+      <OrderForm locationData={locationData} alwaysCharge={alwaysCharge} />
     </Elements>
   );
 }
