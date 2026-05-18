@@ -4,7 +4,46 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
+
+const INDUSTRIES = [
+  "Automotive - Dealerships",
+  "Automotive - Service / Repair",
+  "Bar & Lounge",
+  "Brewery",
+  "Cannabis Dispensary",
+  "Casino / Gaming",
+  "Convenience Store",
+  "Grocery",
+  "Hotel / Lodging Lobby",
+  "Health & Fitness – Barber Shops",
+  "Health & Fitness - Gym",
+  "Health & Fitness - Hair Salons",
+  "Health & Fitness - Health Club",
+  "Health & Fitness – Nail Salons",
+  "Health & Fitness - Recreational",
+  "Insurance Office",
+  "Medical - Behavioral Health",
+  "Medical – Chiropractors",
+  "Medical - Dermatology",
+  "Medical - Dentistry/Orthodontics",
+  "Medical - Facilities / Clinics",
+  "Medical - Urgent Cares",
+  "Restaurant & Bar",
+  "Restaurant Fast Food",
+  "Retail Clothing & Shoes",
+  "Retail Jewelry & Watches",
+  "School / University",
+  "Smoke Shops",
+  "Winery",
+];
 
 interface StepAboutProps {
   onComplete: () => void;
@@ -29,6 +68,11 @@ export function StepAbout({ onComplete, firstName, lastName }: StepAboutProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!form.industry) {
+      toast.error("Please select an industry");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -122,15 +166,21 @@ export function StepAbout({ onComplete, firstName, lastName }: StepAboutProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="industry">
-          Industry <span className="text-muted-foreground font-normal">(optional)</span>
-        </Label>
-        <Input
-          id="industry"
+        <Label htmlFor="industry">Industry</Label>
+        <Select
           value={form.industry}
-          onChange={(e) => updateField("industry", e.target.value)}
-          placeholder="e.g. Restaurant, Retail, Healthcare"
-        />
+          onValueChange={(v) => updateField("industry", v)}
+          required
+        >
+          <SelectTrigger id="industry">
+            <SelectValue placeholder="Select your industry" />
+          </SelectTrigger>
+          <SelectContent>
+            {INDUSTRIES.map((industry) => (
+              <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
