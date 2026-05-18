@@ -4,44 +4,56 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 
 const INDUSTRIES = [
+  "Automotive - Car Wash / Detailing",
   "Automotive - Dealerships",
   "Automotive - Service / Repair",
   "Bar & Lounge",
+  "Bowling Alley / Arcade",
   "Brewery",
   "Cannabis Dispensary",
+  "Car Wash",
   "Casino / Gaming",
+  "Church / Religious Organization",
+  "Coffee Shop",
   "Convenience Store",
+  "Coworking Space",
+  "Financial Services / Banking",
+  "Food Truck",
   "Grocery",
-  "Hotel / Lodging Lobby",
-  "Health & Fitness – Barber Shops",
+  "Health & Fitness - Barber Shops",
   "Health & Fitness - Gym",
   "Health & Fitness - Hair Salons",
   "Health & Fitness - Health Club",
-  "Health & Fitness – Nail Salons",
+  "Health & Fitness - Nail Salons",
   "Health & Fitness - Recreational",
+  "Health & Fitness - Spa / Massage",
+  "Health & Fitness - Tattoo & Piercing Studio",
+  "Health & Fitness - Yoga / Pilates Studio",
+  "Hotel / Lodging Lobby",
   "Insurance Office",
+  "Laundromat",
   "Medical - Behavioral Health",
-  "Medical – Chiropractors",
+  "Medical - Chiropractors",
   "Medical - Dermatology",
   "Medical - Dentistry/Orthodontics",
   "Medical - Facilities / Clinics",
+  "Medical - Ophthalmology / Optometry",
+  "Medical - Physical Therapy",
   "Medical - Urgent Cares",
+  "Movie Theater / Entertainment Venue",
+  "Pharmacy / Drug Store",
+  "Real Estate Office",
+  "Restaurant",
   "Restaurant & Bar",
   "Restaurant Fast Food",
   "Retail Clothing & Shoes",
   "Retail Jewelry & Watches",
   "School / University",
   "Smoke Shops",
+  "Veterinary / Pet Care",
   "Winery",
 ];
 
@@ -61,6 +73,12 @@ export function StepAbout({ onComplete, firstName, lastName }: StepAboutProps) {
     industry: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [industryInput, setIndustryInput] = useState("");
+  const [industryOpen, setIndustryOpen] = useState(false);
+
+  const filteredIndustries = industryInput.trim()
+    ? INDUSTRIES.filter((i) => i.toLowerCase().includes(industryInput.toLowerCase()))
+    : INDUSTRIES;
 
   function updateField(field: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -165,22 +183,44 @@ export function StepAbout({ onComplete, firstName, lastName }: StepAboutProps) {
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 relative">
         <Label htmlFor="industry">Industry</Label>
-        <Select
-          value={form.industry}
-          onValueChange={(v) => updateField("industry", v)}
-          required
-        >
-          <SelectTrigger id="industry">
-            <SelectValue placeholder="Select your industry" />
-          </SelectTrigger>
-          <SelectContent>
-            {INDUSTRIES.map((industry) => (
-              <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+        <Input
+          id="industry"
+          autoComplete="off"
+          placeholder="Search industries..."
+          value={form.industry || industryInput}
+          onFocus={() => {
+            if (form.industry) {
+              setIndustryInput(form.industry);
+              updateField("industry", "");
+            }
+            setIndustryOpen(true);
+          }}
+          onChange={(e) => {
+            setIndustryInput(e.target.value);
+            updateField("industry", "");
+            setIndustryOpen(true);
+          }}
+          onBlur={() => setTimeout(() => setIndustryOpen(false), 150)}
+        />
+        {industryOpen && filteredIndustries.length > 0 && (
+          <ul className="absolute z-50 w-full bg-popover border border-border rounded-md shadow-md mt-1 max-h-60 overflow-auto">
+            {filteredIndustries.map((industry) => (
+              <li
+                key={industry}
+                className="px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                onMouseDown={() => {
+                  updateField("industry", industry);
+                  setIndustryInput("");
+                  setIndustryOpen(false);
+                }}
+              >
+                {industry}
+              </li>
             ))}
-          </SelectContent>
-        </Select>
+          </ul>
+        )}
       </div>
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
