@@ -7,8 +7,9 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname?.startsWith("/sign-in") || pathname?.startsWith("/sign-up");
   const isOnboardingPage = pathname?.startsWith("/onboarding");
+  const isInvitePage = pathname?.startsWith("/invite");
 
-  if (isAuthPage || isOnboardingPage) {
+  if (isAuthPage || isOnboardingPage || isInvitePage) {
     return <>{children}</>;
   }
 

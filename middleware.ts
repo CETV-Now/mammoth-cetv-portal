@@ -4,6 +4,7 @@ import type { NextRequest, NextFetchEvent } from "next/server";
 const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/invite(.*)",
   "/api/webhooks/clerk(.*)",
 ]);
 
