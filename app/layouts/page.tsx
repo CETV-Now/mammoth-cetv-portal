@@ -31,7 +31,7 @@ export default async function LayoutsPageRoute() {
     db
       .collection("content")
       .findOne(
-        { account_id: account._id, status: "active", mime_type: { $regex: /^image\// } },
+        { account_id: account._id, status: "active", mime_type: { $regex: /^image\// }, type: "promotion" },
         { projection: { url: 1 }, sort: { created_at: -1 } }
       ),
   ]);
