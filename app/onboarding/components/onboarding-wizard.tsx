@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePostHog } from "posthog-js/react";
 import { StepAbout } from "./step-about";
 import { StepLocation } from "./step-location";
 import { StepDeviceOrder } from "./step-device-order";
@@ -26,11 +27,30 @@ const STEP_LABELS = [
   "Order Device",
 ];
 
+const STEP_VIEWED_EVENTS = [
+  "onboarding_about_you_viewed",
+  "onboarding_location_viewed",
+  "onboarding_device_order_viewed",
+] as const;
+
+const STEP_COMPLETED_EVENTS = [
+  "onboarding_about_you_completed",
+  "onboarding_location_completed",
+] as const;
+
 export function OnboardingWizard({ step: initialStep, account, firstName, lastName, alwaysCharge }: OnboardingWizardProps) {
   const [step, setStep] = useState(initialStep);
   const [screenId, setScreenId] = useState<string | null>(null);
+  const ph = usePostHog();
+
+  useEffect(() => {
+    const event = STEP_VIEWED_EVENTS[step - 1];
+    if (event) ph?.capture(event);
+  }, [step, ph]);
 
   function advance() {
+    const event = STEP_COMPLETED_EVENTS[step - 1];
+    if (event) ph?.capture(event);
     setStep((s) => s + 1);
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePostHog } from "posthog-js/react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { CheckCircle2, Loader2, Tag, X } from "lucide-react";
@@ -32,6 +33,7 @@ type PromoStatus = "idle" | "checking" | "valid" | "invalid";
 function OrderForm({ locationData, alwaysCharge }: { locationData: LocationData; alwaysCharge: boolean }) {
   const stripe = useStripe();
   const elements = useElements();
+  const ph = usePostHog();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
     line1: locationData.address ?? "",
@@ -131,6 +133,7 @@ function OrderForm({ locationData, alwaysCharge }: { locationData: LocationData;
         throw new Error(data.error ?? "Failed to place order");
       }
 
+      ph?.capture("onboarding_completed", { used_promo: hasPromo });
       toast.success("Order placed! Your device is on the way.");
       window.location.href = "/dashboard";
     } catch (err) {

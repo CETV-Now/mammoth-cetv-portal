@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { Toaster } from "@/components/ui/sonner";
+import { PostHogProvider } from "@/providers/posthog";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,8 +30,10 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-          <LayoutWrapper>{children}</LayoutWrapper>
-          <Toaster />
+          <PostHogProvider>
+            <LayoutWrapper>{children}</LayoutWrapper>
+            <Toaster />
+          </PostHogProvider>
         </body>
       </html>
     </ClerkProvider>
