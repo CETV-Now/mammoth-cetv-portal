@@ -9,6 +9,7 @@ export default function SignUpPage() {
         <SignUp
           appearance={{
             variables: { colorPrimary: "#000000" },
+            elements: { logoBox: "hidden" },
           }}
         />
       </div>

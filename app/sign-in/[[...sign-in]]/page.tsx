@@ -9,6 +9,7 @@ export default function SignInPage() {
         <SignIn
           appearance={{
             variables: { colorPrimary: "#000000" },
+            elements: { logoBox: "hidden" },
           }}
         />
       </div>
