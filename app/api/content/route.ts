@@ -87,9 +87,11 @@ export async function POST(req: Request) {
   });
 
   if (mimeType === "video/mp4") {
-    tasks
-      .trigger("transcode-user-content", { id: result.insertedId.toString() })
-      .catch((err) => console.error("[transcode-user-content] trigger failed:", err));
+    try {
+      await tasks.trigger("transcode-user-content", { id: result.insertedId.toString() });
+    } catch (err) {
+      console.error("[transcode-user-content] trigger failed:", err);
+    }
   }
 
   const isVideo = mimeType === "video/mp4";
