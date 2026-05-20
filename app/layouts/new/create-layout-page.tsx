@@ -989,6 +989,7 @@ export function CreateLayoutPage() {
           After saving a layout you can preview what it will look like by clicking the &ldquo;Preview Layout&rdquo; option in the layout menu.
         </p>
       )}
+
     </div>
   );
 }

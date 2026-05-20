@@ -30,9 +30,10 @@ export default async function EditLayoutPageRoute({
   const account = await db.collection("accounts").findOne({ _id: user.account_id });
   if (!account?.onboardingComplete) redirect("/onboarding");
 
-  const layout = await db
-    .collection("screen_layouts")
-    .findOne({ _id: layoutId, account_id: user.account_id });
+  const [layout, assignedScreenCount] = await Promise.all([
+    db.collection("screen_layouts").findOne({ _id: layoutId, account_id: user.account_id }),
+    db.collection("screens").countDocuments({ layout_id: layoutId, account_id: user.account_id, status: { $ne: "deleted" } }),
+  ]);
 
   if (!layout) notFound();
 
@@ -51,6 +52,7 @@ export default async function EditLayoutPageRoute({
       template={templateNormalize[template] ?? template}
       zoneData={layout.zone_data as object[]}
       clockWeatherScheme={(layout.clock_weather_scheme as string) ?? "blue"}
+      hasAssignedScreens={assignedScreenCount > 0}
     />
   );
 }

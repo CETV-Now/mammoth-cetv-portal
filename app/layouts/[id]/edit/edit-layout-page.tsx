@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { HelpCircle, ImageIcon, Plus, Trash2, Type } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -502,11 +503,13 @@ interface EditLayoutPageProps {
   template: string;
   zoneData: object[];
   clockWeatherScheme?: string;
+  hasAssignedScreens: boolean;
 }
 
-export function EditLayoutPage({ layoutId, name: initialName, description: initialDescription, template, zoneData, clockWeatherScheme: initialClockWeatherScheme }: EditLayoutPageProps) {
+export function EditLayoutPage({ layoutId, name: initialName, description: initialDescription, template, zoneData, clockWeatherScheme: initialClockWeatherScheme, hasAssignedScreens }: EditLayoutPageProps) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
+  const [refreshReminderOpen, setRefreshReminderOpen] = React.useState(false);
   const [step, setStep] = React.useState<Step>(1);
 
   const initial = React.useMemo(() => parseZoneData(template, zoneData as Record<string, unknown>[]), []);
@@ -591,8 +594,11 @@ export function EditLayoutPage({ layoutId, name: initialName, description: initi
       });
 
       if (!res.ok) throw new Error("Save failed");
-      toast.success("Layout updated");
-      router.push("/layouts");
+      if (hasAssignedScreens) {
+        setRefreshReminderOpen(true);
+      } else {
+        router.push("/layouts");
+      }
     } catch {
       toast.error("Failed to save layout. Please try again.");
       setSaving(false);
@@ -713,6 +719,20 @@ export function EditLayoutPage({ layoutId, name: initialName, description: initi
           After saving a layout you can preview what it will look like by clicking the &ldquo;Preview Layout&rdquo; option in the layout menu.
         </p>
       )}
+
+      <Dialog open={refreshReminderOpen} onOpenChange={(open) => { if (!open) router.push("/layouts"); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Layout saved</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Your layout has been saved. Be sure to refresh any screen using this layout so it is up to date. You can do this from screen details or from the Locations and Screens page.
+          </p>
+          <DialogFooter>
+            <Button onClick={() => router.push("/layouts")}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

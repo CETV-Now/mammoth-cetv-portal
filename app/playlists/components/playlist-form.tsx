@@ -157,6 +157,7 @@ export function PlaylistForm({
   const [schedulingKey, setSchedulingKey] = React.useState<string | null>(null);
   const [scheduleWarningOpen, setScheduleWarningOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [refreshReminderOpen, setRefreshReminderOpen] = React.useState(false);
 
   const schedulingItem = schedulingKey
     ? playlistItems.find((i) => i.localKey === schedulingKey) ?? null
@@ -275,7 +276,11 @@ export function PlaylistForm({
         throw new Error(err.error ?? "Failed to save playlist");
       }
 
-      router.push("/playlists");
+      if (selectedScreenIds.length > 0) {
+        setRefreshReminderOpen(true);
+      } else {
+        router.push("/playlists");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -482,6 +487,20 @@ export function PlaylistForm({
           onSave={(schedule) => handleScheduleSave(schedulingItem.localKey, schedule)}
         />
       )}
+
+      <Dialog open={refreshReminderOpen} onOpenChange={(open) => { if (!open) router.push("/playlists"); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Playlist saved</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Your playlist has been saved. Be sure to refresh any screen using the playlist so it is up to date. You can do this from screen details or from the Locations and Screens page.
+          </p>
+          <DialogFooter>
+            <Button onClick={() => router.push("/playlists")}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={scheduleWarningOpen} onOpenChange={setScheduleWarningOpen}>
         <DialogContent className="max-w-sm">

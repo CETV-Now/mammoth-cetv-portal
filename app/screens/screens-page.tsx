@@ -415,7 +415,24 @@ function ScreenMenu({ screen, alwaysCharge }: { screen: ScreenRow; alwaysCharge:
   const [activating, setActivating] = React.useState(false);
   const [activated, setActivated] = React.useState(false);
   const [orderDeviceOpen, setOrderDeviceOpen] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
   const pinRef = React.useRef<HTMLInputElement>(null);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      const res = await fetch(`/api/screens/${screen._id}/reload`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to refresh screen");
+      }
+      toast.success("Refresh command sent");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function handleInstallOpenChange(open: boolean) {
     setInstallOpen(open);
@@ -455,6 +472,11 @@ function ScreenMenu({ screen, alwaysCharge }: { screen: ScreenRow; alwaysCharge:
           <DropdownMenuItem onSelect={() => setDetailsOpen(true)}>Screen Details</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setSetPlaylistOpen(true)}>Set Playlist</DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setSetLayoutOpen(true)}>Set Layout</DropdownMenuItem>
+          {screen.connected && (
+            <DropdownMenuItem onSelect={handleRefresh} disabled={refreshing}>
+              {refreshing ? "Refreshing..." : "Refresh Screen"}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -706,7 +728,8 @@ function SetLayoutModal({
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-1">
+        <p className="text-xs text-muted-foreground">Make sure to refresh your screen after setting a screen layout.</p>
+        <div className="flex items-center justify-between">
           <Button
             variant="outline"
             size="sm"
@@ -1086,7 +1109,8 @@ function SetPlaylistModal({
           </div>
         )}
 
-        <div className="flex items-center justify-end pt-1">
+        <p className="text-xs text-muted-foreground">Make sure to refresh your screen after selecting a playlist.</p>
+        <div className="flex items-center justify-end">
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving || !hasChanged || loading}>
