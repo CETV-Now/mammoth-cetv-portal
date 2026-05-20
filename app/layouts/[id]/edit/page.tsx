@@ -50,6 +50,7 @@ export default async function EditLayoutPageRoute({
       description={(layout.description ?? "") as string}
       template={templateNormalize[template] ?? template}
       zoneData={layout.zone_data as object[]}
+      clockWeatherScheme={(layout.clock_weather_scheme as string) ?? "blue"}
     />
   );
 }

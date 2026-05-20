@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 type TemplateId = "two-zone-vertical" | "two-zone-horizontal" | "five-zone";
 type WidgetType = "scrolling-text" | "rotating-text" | "image";
+type ClockWeatherScheme = "blue" | "black" | "white";
 type Step = 1 | 2 | 3;
 
 // ─── SVG diagrams ────────────────────────────────────────────────────────────
@@ -441,6 +442,55 @@ function ImageWidgetConfig({ images, onImagesChange, spec = PORTRAIT_IMAGE_SPEC 
   );
 }
 
+// ─── Clock & weather color scheme ────────────────────────────────────────────
+
+const CLOCK_WEATHER_SCHEMES: Record<ClockWeatherScheme, { label: string; bg: string; cardBg: string; text: string }> = {
+  blue:  { label: "Blue",  bg: "#022649", cardBg: "rgba(30,64,175,0.5)", text: "#ffffff" },
+  black: { label: "Black", bg: "#000000", cardBg: "#4b5563",              text: "#ffffff" },
+  white: { label: "White", bg: "#ffffff", cardBg: "#e5e7eb",              text: "#000000" },
+};
+
+function ClockWeatherSchemeSelector({ value, onChange }: { value: ClockWeatherScheme; onChange: (v: ClockWeatherScheme) => void }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <p className="text-sm font-medium">Clock & Weather Color Scheme</p>
+        <p className="text-xs text-muted-foreground">Choose a color scheme for the clock and weather zones.</p>
+      </div>
+      <div className="grid grid-cols-3 gap-3 max-w-sm">
+        {(Object.entries(CLOCK_WEATHER_SCHEMES) as [ClockWeatherScheme, typeof CLOCK_WEATHER_SCHEMES[ClockWeatherScheme]][]).map(([id, scheme]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onChange(id)}
+            className={cn(
+              "flex flex-col gap-2 rounded-lg border-2 p-3 text-left transition-colors",
+              value === id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"
+            )}
+          >
+            <div className="w-full rounded overflow-hidden flex flex-col p-2 gap-2" style={{ backgroundColor: scheme.bg }}>
+              <div className="flex items-center justify-center gap-1" style={{ color: scheme.text }}>
+                <span style={{ fontSize: 13, fontWeight: 300, letterSpacing: 1 }}>12:00</span>
+                <span style={{ fontSize: 7, opacity: 0.75 }}>PM</span>
+              </div>
+              <div className="flex flex-col items-center gap-1" style={{ color: scheme.text }}>
+                <span style={{ fontSize: 16 }}>⛅</span>
+                <span style={{ fontSize: 9 }}>72°F</span>
+                <div className="grid grid-cols-4 gap-0.5 w-full mt-0.5">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} style={{ backgroundColor: scheme.cardBg, borderRadius: 2, height: 8 }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <p className="text-xs font-semibold">{scheme.label}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Five Zone single image upload ───────────────────────────────────────────
 
 const FIVE_ZONE_IMAGE_SPEC: ImageSpec = {
@@ -603,6 +653,7 @@ export function CreateLayoutPage() {
   const [selectedTemplate, setSelectedTemplate] = React.useState<TemplateId | null>(null);
 
   // Step 2 — widget
+  const [clockWeatherScheme, setClockWeatherScheme] = React.useState<ClockWeatherScheme>("blue");
   const [selectedWidget, setSelectedWidget] = React.useState<WidgetType | null>(null);
   const [scrollText, setScrollText] = React.useState("");
   const [scrollBg, setScrollBg] = React.useState("#000000");
@@ -748,6 +799,7 @@ export function CreateLayoutPage() {
           name: name.trim(),
           description: description.trim(),
           zone_data,
+          clock_weather_scheme: clockWeatherScheme,
         }),
       });
 
@@ -826,20 +878,7 @@ export function CreateLayoutPage() {
 
       {step === 2 && selectedTemplate === "five-zone" && (
         <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-3">
-            <p className="text-sm font-medium">Fixed Zones</p>
-            <p className="text-xs text-muted-foreground">The following zones are included automatically and cannot be changed.</p>
-            <ul className="flex flex-col gap-2">
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="inline-block size-2 rounded-full bg-[#cbd5e1]" />
-                Clock — displays the current time
-              </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="inline-block size-2 rounded-full bg-[#bfdbfe]" />
-                Weather — displays local weather conditions
-              </li>
-            </ul>
-          </div>
+          <ClockWeatherSchemeSelector value={clockWeatherScheme} onChange={setClockWeatherScheme} />
 
           <WidgetZoneConfig
             label="Ticker Zone"

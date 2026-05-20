@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { template, name, description, zone_data } = body;
+  const { template, name, description, zone_data, clock_weather_scheme } = body;
 
   if (!template || !name || !Array.isArray(zone_data)) {
     return Response.json({ error: "template, name, and zone_data are required" }, { status: 400 });
@@ -48,6 +48,7 @@ export async function POST(req: Request) {
     description: description ?? "",
     account_id: user.account_id,
     zone_data,
+    clock_weather_scheme: clock_weather_scheme ?? "blue",
     created_at: now,
     updated_at: now,
   });

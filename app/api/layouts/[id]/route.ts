@@ -75,7 +75,7 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const { name, description, zone_data } = body;
+  const { name, description, zone_data, clock_weather_scheme } = body;
 
   if (!name || !Array.isArray(zone_data)) {
     return Response.json({ error: "name and zone_data are required" }, { status: 400 });
@@ -83,7 +83,7 @@ export async function PATCH(
 
   await db.collection("screen_layouts").updateOne(
     { _id: layoutId },
-    { $set: { name, description: description ?? "", zone_data, updated_at: new Date() } }
+    { $set: { name, description: description ?? "", zone_data, clock_weather_scheme: clock_weather_scheme ?? "blue", updated_at: new Date() } }
   );
 
   tasks
