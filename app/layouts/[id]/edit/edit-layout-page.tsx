@@ -3,13 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ImageIcon, Plus, Trash2, Type } from "lucide-react";
+import { HelpCircle, ImageIcon, Plus, Trash2, Type } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -294,7 +295,19 @@ function ClockWeatherSchemeSelector({ value, onChange }: { value: ClockWeatherSc
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium">Clock & Weather Color Scheme</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-medium">Clock & Weather Color Scheme</p>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                <HelpCircle className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-64">
+              Make sure your screens are set to the correct timezones. This can be done in screen details.
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <p className="text-xs text-muted-foreground">Choose a color scheme for the clock and weather zones.</p>
       </div>
       <div className="grid grid-cols-3 gap-3 max-w-sm">
