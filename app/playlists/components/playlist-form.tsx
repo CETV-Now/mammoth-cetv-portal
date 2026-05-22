@@ -42,6 +42,7 @@ export interface ContentItem {
   name: string;
   url: string;
   mime_type: string;
+  thumbnail_url?: string;
 }
 
 export interface Screen {
@@ -99,6 +100,7 @@ interface PlaylistItem {
   name: string;
   url?: string;
   mime_type?: string;
+  thumbnail_url?: string;
   schedule?: Schedule;
 }
 
@@ -134,6 +136,7 @@ export function PlaylistForm({
         name: item.name,
         url: item.id ? content.find((c) => c._id === item.id)?.url : undefined,
         mime_type: item.id ? content.find((c) => c._id === item.id)?.mime_type : undefined,
+        thumbnail_url: item.id ? content.find((c) => c._id === item.id)?.thumbnail_url : undefined,
         schedule: item.day_part
           ? {
               always: false,
@@ -202,6 +205,7 @@ export function PlaylistForm({
         name: item.name,
         url: item.url,
         mime_type: item.mime_type,
+        thumbnail_url: item.thumbnail_url,
       }));
     setPlaylistItems((prev) => [...prev, ...newItems]);
   }
@@ -553,7 +557,7 @@ function SortablePlaylistItem({ item, onRemove, onSchedule }: SortablePlaylistIt
       </button>
 
       <div className="w-14 shrink-0 aspect-video relative bg-muted rounded overflow-hidden">
-        <ContentThumbnail url={item.url} mime_type={item.mime_type} name={item.name} />
+        <ContentThumbnail url={item.url} mime_type={item.mime_type} name={item.name} thumbnail_url={item.thumbnail_url} />
       </div>
 
       <span className="flex-1 text-sm truncate">{item.name}</span>
@@ -737,9 +741,10 @@ interface ContentThumbnailProps {
   url?: string;
   mime_type?: string;
   name: string;
+  thumbnail_url?: string;
 }
 
-function ContentThumbnail({ url, mime_type, name }: ContentThumbnailProps) {
+function ContentThumbnail({ url, mime_type, name, thumbnail_url }: ContentThumbnailProps) {
   const isImage = mime_type?.startsWith("image/");
   const isVideo = mime_type?.startsWith("video/");
 
@@ -753,6 +758,15 @@ function ContentThumbnail({ url, mime_type, name }: ContentThumbnailProps) {
     );
   }
   if (isVideo) {
+    if (thumbnail_url) {
+      return (
+        <img
+          src={thumbnail_url}
+          alt={name}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      );
+    }
     return (
       <div className="absolute inset-0 flex items-center justify-center">
         <VideoIcon className="size-4 text-muted-foreground" />

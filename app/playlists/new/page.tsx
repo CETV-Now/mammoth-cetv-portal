@@ -27,6 +27,7 @@ export default async function NewPlaylistPage() {
     name: item.name,
     url: item.url,
     mime_type: item.mime_type,
+    thumbnail_url: item.thumbnail_url,
   }));
 
   const rawScreens = await db

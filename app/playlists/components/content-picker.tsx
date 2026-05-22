@@ -334,7 +334,10 @@ export function ContentPicker({
                       {isImg && (
                         <img src={item.url} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
                       )}
-                      {isVid && (
+                      {isVid && item.thumbnail_url && (
+                        <img src={item.thumbnail_url} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
+                      )}
+                      {isVid && !item.thumbnail_url && (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <VideoIcon className="size-6 text-muted-foreground" />
                         </div>
