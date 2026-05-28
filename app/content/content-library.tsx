@@ -390,7 +390,7 @@ function ContentCard({ item, onArchive, onUnarchive, onUpdate, readOnly = false 
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               {isVideo ? <VideoBadge item={item} /> : (
-                <Badge variant="secondary" className="text-xs gap-1.5">
+                <Badge variant="outline" className="text-xs gap-1.5">
                   <ImageIcon className="size-3" />
                   Image
                 </Badge>
