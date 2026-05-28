@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { name, url, mimeType, runtime, type: contentType = "promotion" } = body;
+  const { name, url, mimeType, runtime, type: contentType = "promotion", is16_9 } = body;
 
   if (!name || !url || !mimeType) {
     return Response.json({ error: "name, url, and mimeType are required" }, { status: 400 });
@@ -82,6 +82,7 @@ export async function POST(req: Request) {
     runtime: typeof runtime === "number" ? runtime : parseInt(runtime, 10),
     transcoding_required: mimeType === "video/mp4",
     transcoded: false,
+    ...(typeof is16_9 === "boolean" && { is_16_9: is16_9 }),
     created_at: now,
     updated_at: now,
   });
@@ -108,5 +109,6 @@ export async function POST(req: Request) {
     transcoding_required: isVideo,
     transcoded: false,
     transcoding_error: false,
+    ...(typeof is16_9 === "boolean" && { is_16_9: is16_9 }),
   });
 }

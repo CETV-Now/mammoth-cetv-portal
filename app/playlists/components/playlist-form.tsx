@@ -161,6 +161,7 @@ export function PlaylistForm({
   const [scheduleWarningOpen, setScheduleWarningOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [refreshReminderOpen, setRefreshReminderOpen] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const schedulingItem = schedulingKey
     ? playlistItems.find((i) => i.localKey === schedulingKey) ?? null
@@ -290,6 +291,17 @@ export function PlaylistForm({
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleRefreshNow() {
+    setRefreshing(true);
+    await Promise.allSettled(
+      selectedScreenIds.map((id) =>
+        fetch(`/api/screens/${id}/reload`, { method: "POST" })
+      )
+    );
+    setRefreshing(false);
+    router.push("/playlists");
   }
 
   return (
@@ -498,9 +510,12 @@ export function PlaylistForm({
             <DialogTitle>Playlist saved</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Your playlist has been saved. Be sure to refresh any screen using the playlist so it is up to date. You can do this from screen details or from the Locations and Screens page.
+            Your playlist has been saved. The screens using this playlist need to be refreshed to see the latest changes. You can do so now by clicking the &ldquo;Refresh Now&rdquo; button, or you can refresh the screens later from the &ldquo;Screens&rdquo; page.
           </p>
-          <DialogFooter>
+          <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+            <Button variant="outline" onClick={handleRefreshNow} disabled={refreshing}>
+              {refreshing ? "Refreshing…" : "Refresh Now"}
+            </Button>
             <Button onClick={() => router.push("/playlists")}>Got it</Button>
           </DialogFooter>
         </DialogContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Archive, ArchiveRestore, ArchiveX, ArrowDown, ArrowUp, Clock, ImageIcon, Pencil, VideoIcon } from "lucide-react";
+import { AlertTriangle, Archive, ArchiveRestore, ArchiveX, ArrowDown, ArrowUp, Clock, ImageIcon, Pencil, VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,7 @@ export interface ContentItem {
   transcoded?: boolean;
   transcoding_error?: boolean;
   thumbnail_url?: string;
+  is_16_9?: boolean;
 }
 
 interface ContentLibraryProps {
@@ -370,6 +371,16 @@ function ContentCard({ item, onArchive, onUnarchive, onUpdate, readOnly = false 
             <div className="absolute inset-0 flex items-center justify-center">
               <ImageIcon className="size-8 text-muted-foreground group-hover:text-foreground transition-colors" />
             </div>
+          )}
+          {item.is_16_9 === false && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="absolute top-1.5 right-1.5 rounded bg-black/60 p-0.5">
+                  <AlertTriangle className="size-3.5 text-yellow-400" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>Not 16:9 — may appear cropped or letterboxed on screen</TooltipContent>
+            </Tooltip>
           )}
         </button>
         <CardContent className="p-3 flex flex-col gap-2">

@@ -115,8 +115,14 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
         const video = document.createElement("video");
         video.preload = "metadata";
         video.onloadedmetadata = () => {
-          if (video.duration > 30) {
-            setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, durationError: true } : e));
+          const updates: Partial<FileEntry> = {};
+          if (video.duration > 30) updates.durationError = true;
+          if (video.videoWidth > 0 && video.videoHeight > 0) {
+            const ratio = video.videoWidth / video.videoHeight;
+            if (Math.abs(ratio - 16 / 9) > 0.02) updates.aspectWarning = true;
+          }
+          if (Object.keys(updates).length > 0) {
+            setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, ...updates } : e));
           }
           URL.revokeObjectURL(url);
         };
@@ -162,6 +168,7 @@ export function UploadDialog({ onUploaded }: UploadDialogProps) {
         url: s3Url,
         mimeType: entry.file.type,
         runtime: parseInt(entry.runtime, 10),
+        is16_9: !entry.aspectWarning,
       }),
     });
     if (!contentRes.ok) {

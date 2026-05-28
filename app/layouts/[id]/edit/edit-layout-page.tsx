@@ -503,13 +503,14 @@ interface EditLayoutPageProps {
   template: string;
   zoneData: object[];
   clockWeatherScheme?: string;
-  hasAssignedScreens: boolean;
+  assignedScreenIds: string[];
 }
 
-export function EditLayoutPage({ layoutId, name: initialName, description: initialDescription, template, zoneData, clockWeatherScheme: initialClockWeatherScheme, hasAssignedScreens }: EditLayoutPageProps) {
+export function EditLayoutPage({ layoutId, name: initialName, description: initialDescription, template, zoneData, clockWeatherScheme: initialClockWeatherScheme, assignedScreenIds }: EditLayoutPageProps) {
   const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [refreshReminderOpen, setRefreshReminderOpen] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [step, setStep] = React.useState<Step>(1);
 
   const initial = React.useMemo(() => parseZoneData(template, zoneData as Record<string, unknown>[]), []);
@@ -594,7 +595,7 @@ export function EditLayoutPage({ layoutId, name: initialName, description: initi
       });
 
       if (!res.ok) throw new Error("Save failed");
-      if (hasAssignedScreens) {
+      if (assignedScreenIds.length > 0) {
         setRefreshReminderOpen(true);
       } else {
         router.push("/layouts");
@@ -626,6 +627,17 @@ export function EditLayoutPage({ layoutId, name: initialName, description: initi
     rotateFont, onRotateFont: setRotateFont,
     images, onImages: setImages,
   };
+
+  async function handleRefreshNow() {
+    setRefreshing(true);
+    await Promise.allSettled(
+      assignedScreenIds.map((id) =>
+        fetch(`/api/screens/${id}/reload`, { method: "POST" })
+      )
+    );
+    setRefreshing(false);
+    router.push("/layouts");
+  }
 
   return (
     <div className="flex flex-col gap-8 pt-4 max-w-3xl">
@@ -726,9 +738,12 @@ export function EditLayoutPage({ layoutId, name: initialName, description: initi
             <DialogTitle>Layout saved</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Your layout has been saved. Be sure to refresh any screen using this layout so it is up to date. You can do this from screen details or from the Locations and Screens page.
+            Your layout has been saved. You will need to refresh any screen using this layout for the changes to take effect. You can either refresh them now by clicking the &ldquo;Refresh Now&rdquo; button, or you can refresh the screens later from the screen details page.
           </p>
-          <DialogFooter>
+          <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+            <Button variant="outline" onClick={handleRefreshNow} disabled={refreshing}>
+              {refreshing ? "Refreshing…" : "Refresh Now"}
+            </Button>
             <Button onClick={() => router.push("/layouts")}>Got it</Button>
           </DialogFooter>
         </DialogContent>

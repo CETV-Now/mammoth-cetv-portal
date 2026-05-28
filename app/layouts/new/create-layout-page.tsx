@@ -66,19 +66,19 @@ const templates: Template[] = [
   {
     id: "two-zone-vertical",
     name: "Two Zone Vertical",
-    description: "Main content area with a ticker bar along the bottom.",
+    description: "Main content area with a ticker bar along the bottom. Content will be letterboxed.",
     diagram: twoZoneVerticalDiagram,
   },
   {
     id: "two-zone-horizontal",
     name: "Two Zone Horizontal",
-    description: "Content on the left with a configurable widget column on the right.",
+    description: "Content on the left with a configurable widget column on the right. Content will be letterboxed.",
     diagram: twoZoneHorizontalDiagram,
   },
   {
     id: "five-zone",
     name: "5 Zone",
-    description: "Rich layout with dedicated zones for content, clock, weather, ticker, and image.",
+    description: "Rich layout with dedicated zones for content, clock, weather, ticker, and image. Content will be letterboxed.",
     diagram: fiveZoneDiagram,
   },
 ];
@@ -610,7 +610,7 @@ function WidgetZoneConfig(props: WidgetZoneProps) {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        {widgetOptions.map((widget) => {
+        {widgetOptions.filter((w) => w.id !== "scrolling-text").map((widget) => {
           const isSelected = selectedWidget === widget.id;
           return (
             <button
