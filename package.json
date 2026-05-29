@@ -34,6 +34,7 @@
     "mongodb": "^7.0.0",
     "next": "16.0.8",
     "next-themes": "^0.4.6",
+    "node-vibrant": "^4.0.4",
     "openai": "^6.37.0",
     "posthog-js": "^1.374.2",
     "radix-ui": "^1.4.3",

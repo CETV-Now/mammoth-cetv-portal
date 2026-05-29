@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { tasks } from "@trigger.dev/sdk";
 import { ObjectId } from "mongodb";
+import { Vibrant } from "node-vibrant/node";
 import clientPromise from "@/lib/mongodb";
 
 export async function GET(req: Request) {
@@ -70,6 +71,21 @@ export async function POST(req: Request) {
 
   const now = new Date();
 
+  let bgColor: string | null = null;
+  if (mimeType.startsWith("image/")) {
+    try {
+      const palette = await Vibrant.from(url).getPalette();
+      bgColor =
+        palette.DarkMuted?.hex ??
+        palette.DarkVibrant?.hex ??
+        palette.Muted?.hex ??
+        palette.Vibrant?.hex ??
+        null;
+    } catch (err) {
+      console.error("[bg_color] color extraction failed:", err);
+    }
+  }
+
   const result = await db.collection("content").insertOne({
     account_id: account._id,
     type: contentType,
@@ -83,6 +99,7 @@ export async function POST(req: Request) {
     transcoding_required: mimeType === "video/mp4",
     transcoded: false,
     ...(typeof is16_9 === "boolean" && { is_16_9: is16_9 }),
+    ...(bgColor && { bg_color: bgColor }),
     created_at: now,
     updated_at: now,
   });
