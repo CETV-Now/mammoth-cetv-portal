@@ -10,6 +10,7 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 import { CheckCircle2, Globe, MoreHorizontal, Pencil, Power, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ActivateScreenModal } from "@/components/activate-screen-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -410,13 +411,8 @@ function ScreenMenu({ screen, alwaysCharge }: { screen: ScreenRow; alwaysCharge:
   const [detailsOpen, setDetailsOpen] = React.useState(false);
   const [setPlaylistOpen, setSetPlaylistOpen] = React.useState(false);
   const [setLayoutOpen, setSetLayoutOpen] = React.useState(false);
-  const [installCode, setInstallCode] = React.useState<string | null>(null);
-  const [installCodeLoading, setInstallCodeLoading] = React.useState(false);
-  const [activating, setActivating] = React.useState(false);
-  const [activated, setActivated] = React.useState(false);
   const [orderDeviceOpen, setOrderDeviceOpen] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
-  const pinRef = React.useRef<HTMLInputElement>(null);
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -433,25 +429,6 @@ function ScreenMenu({ screen, alwaysCharge }: { screen: ScreenRow; alwaysCharge:
       setRefreshing(false);
     }
   }
-
-  function handleInstallOpenChange(open: boolean) {
-    setInstallOpen(open);
-    if (!open) {
-      if (pinRef.current) pinRef.current.value = "";
-      setInstallCode(null);
-      setActivated(false);
-    }
-  }
-
-  React.useEffect(() => {
-    if (!installOpen) return;
-    setInstallCodeLoading(true);
-    fetch(`/api/screens/${screen._id}`)
-      .then((r) => r.json())
-      .then((data) => setInstallCode(data.installCode ?? null))
-      .catch(() => setInstallCode(null))
-      .finally(() => setInstallCodeLoading(false));
-  }, [installOpen, screen._id]);
 
   return (
     <>
@@ -480,84 +457,11 @@ function ScreenMenu({ screen, alwaysCharge }: { screen: ScreenRow; alwaysCharge:
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={installOpen} onOpenChange={handleInstallOpenChange}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Activate Screen</DialogTitle>
-          </DialogHeader>
-          {activated ? (
-            <div className="flex flex-col gap-6">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                It may take a few minutes for your screen to activate. If it is not activated within 5 minutes try entering the PIN again. Make sure to use the correct case for each letter that is displayed on the screen.
-              </p>
-              <Button className="w-full" onClick={() => handleInstallOpenChange(false)}>OK</Button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              <p className="text-sm text-muted-foreground">There are two ways to activate your screen.</p>
-              <div className="flex flex-col gap-5">
-                <div className="flex flex-col gap-3 text-sm">
-                  <p className="text-foreground">Scan the QR code on your screen with your phone. When prompted, enter the code below on your phone:</p>
-                  <p className="font-bold text-foreground text-2xl tracking-widest font-mono text-center">
-                    {installCodeLoading ? "..." : (installCode ?? "—")}
-                  </p>
-                  <Button variant="outline" className="w-full" onClick={() => handleInstallOpenChange(false)}>Done</Button>
-                </div>
-                <div className="relative flex items-center">
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="px-3 text-xs text-muted-foreground">or:</span>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-                <div className="flex flex-col gap-3 text-sm">
-                  <p className="text-foreground">Enter the 4 character PIN displayed on the screen and click activate:</p>
-                  <input
-                    ref={pinRef}
-                    id="install-pin"
-                    defaultValue=""
-                    type="text"
-                    maxLength={4}
-                    placeholder="A1B2"
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs outline-none text-center text-lg tracking-widest font-mono focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                  />
-                  <Button
-                    className="w-full"
-                    disabled={activating}
-                    onClick={async () => {
-                      const pin = (pinRef.current?.value ?? "").replace(/[^a-zA-Z0-9]/g, "");
-                      if (pin.length !== 4) {
-                        toast.error("Please enter the 4-character PIN");
-                        return;
-                      }
-                      setActivating(true);
-                      try {
-                        const res = await fetch(`/api/screens/${screen._id}/activate`, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ pin }),
-                        });
-                        if (!res.ok) {
-                          const err = await res.json().catch(() => ({}));
-                          throw new Error(err.error ?? "Activation failed");
-                        }
-                        setActivated(true);
-                        router.refresh();
-                      } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Activation failed");
-                      } finally {
-                        setActivating(false);
-                      }
-                    }}
-                  >
-                    {activating ? "Activating…" : "Activate"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ActivateScreenModal
+        open={installOpen}
+        onOpenChange={setInstallOpen}
+        screenId={screen._id}
+      />
 
       <ScreenDetailsModal
         screen={screen}
