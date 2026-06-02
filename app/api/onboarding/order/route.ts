@@ -1,5 +1,6 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
+import Stripe from "stripe";
 import clientPromise from "@/lib/mongodb";
 import { stripe } from "@/lib/stripe";
 import { tasks } from "@trigger.dev/sdk";
@@ -85,24 +86,35 @@ export async function POST(req: Request) {
   } else {
     // Stripe payment path
     let stripeCustomerId: string = account.stripeCustomerId;
-    if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
-        metadata: { clerkUserId: userId, accountId: account._id.toString() },
-      });
-      stripeCustomerId = customer.id;
-      await db.collection("accounts").updateOne(
-        { _id: account._id },
-        { $set: { stripeCustomerId, updated_at: now } }
-      );
-    }
+    let setupIntent: Stripe.SetupIntent;
+    try {
+      if (!stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          metadata: { clerkUserId: userId, accountId: account._id.toString() },
+        });
+        stripeCustomerId = customer.id;
+        await db.collection("accounts").updateOne(
+          { _id: account._id },
+          { $set: { stripeCustomerId, updated_at: now } }
+        );
+      }
 
-    const setupIntent = await stripe.setupIntents.create({
-      customer: stripeCustomerId,
-      payment_method: paymentMethodId,
-      confirm: true,
-      usage: "off_session",
-      automatic_payment_methods: { enabled: true, allow_redirects: "never" },
-    });
+      setupIntent = await stripe.setupIntents.create({
+        customer: stripeCustomerId,
+        payment_method: paymentMethodId,
+        confirm: true,
+        usage: "off_session",
+        automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+      });
+    } catch (err) {
+      if (err instanceof Stripe.errors.StripeError) {
+        const isClientError =
+          err instanceof Stripe.errors.StripeCardError ||
+          err instanceof Stripe.errors.StripeInvalidRequestError;
+        return Response.json({ error: err.message }, { status: isClientError ? 400 : 502 });
+      }
+      throw err;
+    }
 
     await db.collection("device_orders").insertOne({
       account_id: user.account_id,

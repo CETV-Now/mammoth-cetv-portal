@@ -1,7 +1,7 @@
 # Production Readiness Review — mammoth-cetv-portal
 
 Generated: 2026-05-16  
-Last updated: 2026-05-16
+Last updated: 2026-06-02
 
 ---
 
@@ -11,10 +11,10 @@ Last updated: 2026-05-16
 |---|---|---|---|
 | 1 | Security headers in `next.config.ts` | Critical | ✅ Fixed |
 | 2 | `external_channels` unscoped endpoint | Critical | ✅ By design |
-| 3 | Missing MongoDB indexes | High | Open |
+| 3 | Missing MongoDB indexes | High | ✅ Fixed |
 | 4 | N+1 query in `/api/playlists` | High | ✅ Fixed |
 | 5 | Promo code claim not atomic | High | ✅ Fixed |
-| 6 | No try/catch around `stripe.setupIntents.create` | High | Open |
+| 6 | No try/catch around `stripe.setupIntents.create` | High | ✅ Fixed |
 | 7 | JSON parse errors swallowed silently | High | Open |
 | 8 | Location + screen insert not transactional | High | ✅ Fixed |
 | 9 | Unbounded queries on list endpoints | High | Open |
@@ -25,34 +25,11 @@ Last updated: 2026-05-16
 | 14 | MongoDB client default connection options | Medium | ✅ Fixed |
 | 15 | No `.env.example` file | Medium | ✅ Fixed |
 
-**9 resolved · 6 open**
+**11 resolved · 5 open**
 
 ---
 
 ## Open Items
-
-### 3. Missing MongoDB indexes
-Every API route queries `users` by `clerk_user_id` and most collections by `account_id` with no indexes on these fields. At scale this is a full collection scan on every authenticated request.
-
-**Required indexes:**
-```js
-db.users.createIndex({ clerk_user_id: 1 })
-db.screens.createIndex({ account_id: 1 })
-db.content.createIndex({ account_id: 1, status: 1 })
-db.playlists.createIndex({ account_id: 1, status: 1 })
-db.layouts.createIndex({ account_id: 1 })
-db.locations.createIndex({ account_id: 1 })
-db.promo_codes.createIndex({ code: 1, status: 1 })
-```
-
----
-
-### 6. No try/catch around `stripe.setupIntents.create`
-`/app/api/onboarding/order/route.ts` — if Stripe throws (card declined, network error, rate limit) the route crashes with an unhandled 500 and no user-facing message.
-
-**Fix:** Wrap in try/catch and return a 502 with a meaningful error.
-
----
 
 ### 7. Unhandled JSON parse errors swallowed silently
 Several routes do `await req.json().catch(() => ({}))` and proceed with an empty body, leading to silent misbehaviour rather than a clear 400.
@@ -105,10 +82,11 @@ Related to #9. No `page`/`limit` params, no total count in API responses. Fronte
 | 11 | PIN stored in plaintext | By design — device reads token directly for matching. |
 | 14 | MongoDB default connection options | `maxPoolSize: 10`, `minPoolSize: 2`, `serverSelectionTimeoutMS: 5000`, `socketTimeoutMS: 45000`. |
 | 15 | No `.env.example` | Created with all 19 vars documented by service group. |
+| 3 | Missing MongoDB indexes | All 7 indexes added: `users.clerk_user_id`, `screens.account_id`, `content.{account_id,status}`, `playlists.{account_id,status}`, `screen_layouts.account_id`, `locations.account_id`, `promo_codes.{code,status}`. |
+| 6 | Stripe calls unprotected | Wrapped `customers.create` + `setupIntents.create` in both `orders/route.ts` and `onboarding/order/route.ts`. Card/invalid-request errors → 400; all other Stripe errors → 502. |
 
 ---
 
 ## Highest Actual Risk
 
-- **#3 (missing indexes)** — query performance degrades silently as data grows; no alarm goes off until users notice slowness.
 - **#6 (Stripe error handling)** — any Stripe failure during order placement returns an opaque 500 with no recovery path for the user.
