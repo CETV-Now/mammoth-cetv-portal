@@ -49,7 +49,7 @@ export default async function SetupScreenPage() {
   return (
     <div className="flex flex-1 flex-col py-12 px-6 max-w-2xl mx-auto w-full">
       <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight">Received your first device?</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Ready to setup a screen?</h1>
         <p className="mt-3 text-muted-foreground leading-relaxed">
           Follow the steps below to get your screen up and running.
         </p>
