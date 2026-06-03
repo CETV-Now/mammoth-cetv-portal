@@ -38,7 +38,7 @@ export default async function ChannelDetailRoute({ params }: { params: Promise<{
   const contentItems = rawContent.map((item) => ({
     title: (item.title as string) ?? "",
     url: (item.url as string) ?? "",
-    thumbnail: (item.thumbnail_url as string) ?? null,
+    thumbnail_url: (item.thumbnail_url as string) ?? null,
     published_date: (item.published_date as string) ?? null,
   }));
 
