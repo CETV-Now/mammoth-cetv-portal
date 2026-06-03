@@ -1,8 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { tasks } from "@trigger.dev/sdk";
 import { ObjectId } from "mongodb";
-import { Vibrant } from "node-vibrant/node";
+import sharp from "sharp";
 import clientPromise from "@/lib/mongodb";
+
+export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   const { userId } = await auth();
@@ -74,13 +76,14 @@ export async function POST(req: Request) {
   let bgColor: string | null = null;
   if (mimeType.startsWith("image/")) {
     try {
-      const palette = await Vibrant.from(url).getPalette();
-      bgColor =
-        palette.DarkMuted?.hex ??
-        palette.DarkVibrant?.hex ??
-        palette.Muted?.hex ??
-        palette.Vibrant?.hex ??
-        null;
+      const imgRes = await fetch(url);
+      const buffer = Buffer.from(await imgRes.arrayBuffer());
+      const { data } = await sharp(buffer)
+        .resize(1, 1)
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const luminance = (0.2126 * data[0] + 0.7152 * data[1] + 0.0722 * data[2]) / 255;
+      bgColor = luminance > 0.5 ? "#ffffff" : "#000000";
     } catch (err) {
       console.error("[bg_color] color extraction failed:", err);
     }
