@@ -52,7 +52,7 @@ function ChannelCard({ channel, onClick }: { channel: Channel; onClick: () => vo
       </div>
       <div className="flex flex-col gap-0.5 px-3 py-3">
         <p className="text-sm font-semibold truncate">{channel.name}</p>
-        <p className="text-xs text-muted-foreground">32 items</p>
+        <p className="text-xs text-muted-foreground">{channel.content_count} {channel.content_count === 1 ? "item" : "items"}</p>
       </div>
     </button>
   );

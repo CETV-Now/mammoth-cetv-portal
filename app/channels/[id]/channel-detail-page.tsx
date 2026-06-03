@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Play, Tv } from "lucide-react";
+import { ArrowLeft, Play, Tv, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface ContentItem {
   title: string;
   url: string;
-  thumbnail_url: string | null;
+  thumbnail: string | null;
   published_date: string | null;
 }
 
@@ -46,43 +47,33 @@ function formatDate(dateStr: string | null): string {
   }
 }
 
-const PLACEHOLDER_ITEMS: ContentItem[] = [
-  { title: "Highlight Reel — Week 12", url: "", thumbnail_url: null, published_date: "2025-03-15" },
-  { title: "Top Moments Compilation", url: "", thumbnail_url: null, published_date: "2025-02-28" },
-  { title: "Best of the Season", url: "", thumbnail_url: null, published_date: "2025-01-20" },
-];
-
-function ContentCard({ item, channelName }: { item: ContentItem; channelName: string }) {
+function ContentCard({ item, channelName, onPlay }: { item: ContentItem; channelName: string; onPlay: () => void }) {
   const color = placeholderColor(channelName);
-  const isPlaceholder = !item.url;
 
   return (
     <button
       type="button"
-      disabled={isPlaceholder}
-      className="flex flex-col rounded-lg border overflow-hidden text-left hover:shadow-md transition-shadow disabled:cursor-default group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onClick={onPlay}
+      className="flex flex-col rounded-lg border overflow-hidden text-left hover:shadow-md transition-shadow group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div
         className="w-full aspect-video flex items-center justify-center relative"
-        style={{ backgroundColor: item.thumbnail_url ? undefined : color + "33" }}
+        style={{ backgroundColor: item.thumbnail ? undefined : color + "22" }}
       >
-        {item.thumbnail_url ? (
-          <img src={item.thumbnail_url} alt={item.title} className="w-full h-full object-cover" />
+        {item.thumbnail ? (
+          <>
+            <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-3 bg-black/50">
+                <Play className="size-6 text-white fill-white" />
+              </div>
+            </div>
+          </>
         ) : (
-          <div className="flex items-center justify-center w-full h-full" style={{ backgroundColor: color + "22" }}>
-            <div
-              className="rounded-full p-3"
-              style={{ backgroundColor: color + "33" }}
-            >
+          <div className="flex items-center justify-center w-full h-full">
+            <div className="rounded-full p-3" style={{ backgroundColor: color + "33" }}>
               <Play className="size-6" style={{ color }} />
             </div>
-          </div>
-        )}
-        {isPlaceholder && (
-          <div className="absolute inset-0 flex items-end px-2 pb-1.5">
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-black/40 text-white/70">
-              Preview
-            </span>
           </div>
         )}
       </div>
@@ -98,8 +89,7 @@ function ContentCard({ item, channelName }: { item: ContentItem; channelName: st
 
 export function ChannelDetailPage({ channelName, thumbnail, items }: ChannelDetailPageProps) {
   const color = placeholderColor(channelName);
-  const displayItems = items.length > 0 ? items : PLACEHOLDER_ITEMS;
-  const isShowingPlaceholders = items.length === 0;
+  const [playing, setPlaying] = React.useState<ContentItem | null>(null);
 
   return (
     <div className="flex flex-col gap-6 pt-4">
@@ -126,22 +116,54 @@ export function ChannelDetailPage({ channelName, thumbnail, items }: ChannelDeta
         <div className="flex flex-col gap-0.5">
           <h1 className="text-xl font-semibold">{channelName}</h1>
           <p className="text-sm text-muted-foreground">
-            {isShowingPlaceholders ? "32 items" : `${items.length} item${items.length !== 1 ? "s" : ""}`}
+            {items.length} {items.length === 1 ? "item" : "items"}
           </p>
         </div>
       </div>
 
-      {isShowingPlaceholders && (
-        <p className="text-xs text-muted-foreground -mt-2">
-          Content for this channel is coming soon. Below is a preview of what items will look like.
-        </p>
+      {items.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center py-24">
+          <p className="text-sm text-muted-foreground">No content available for this channel.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {items.map((item, i) => (
+            <ContentCard
+              key={item.url || i}
+              item={item}
+              channelName={channelName}
+              onPlay={() => setPlaying(item)}
+            />
+          ))}
+        </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {displayItems.map((item, i) => (
-          <ContentCard key={item.url || i} item={item} channelName={channelName} />
-        ))}
-      </div>
+      <Dialog open={!!playing} onOpenChange={(open) => { if (!open) setPlaying(null); }}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-black border-none">
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between px-4 py-2 bg-black">
+              <p className="text-sm text-white/80 font-medium truncate pr-4">{playing?.title}</p>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white/70 hover:text-white hover:bg-white/10 shrink-0"
+                onClick={() => setPlaying(null)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+            {playing?.url && (
+              <video
+                key={playing.url}
+                src={playing.url}
+                controls
+                autoPlay
+                className="w-full aspect-video bg-black"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

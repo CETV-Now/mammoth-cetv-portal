@@ -22,11 +22,22 @@ export default async function ChannelsPageRoute() {
     .sort({ name: 1 })
     .toArray();
 
+  const channelIds = rawChannels.map((c) => c._id);
+  const countDocs = await db
+    .collection("external_content")
+    .aggregate([
+      { $match: { external_content_channel_id: { $in: channelIds } } },
+      { $group: { _id: "$external_content_channel_id", count: { $sum: 1 } } },
+    ])
+    .toArray();
+
+  const countMap = Object.fromEntries(countDocs.map((d) => [d._id.toString(), d.count as number]));
+
   const channels = rawChannels.map((c) => ({
     _id: c._id.toString(),
     name: c.name as string,
     thumbnail: (c.thumbnail as string) ?? null,
-    content_count: Array.isArray(c.external_content) ? c.external_content.length : 0,
+    content_count: countMap[c._id.toString()] ?? 0,
   }));
 
   return <ChannelsPage channels={channels} />;

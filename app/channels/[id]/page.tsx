@@ -29,14 +29,18 @@ export default async function ChannelDetailRoute({ params }: { params: Promise<{
   const channel = await db.collection("external_content_channels").findOne({ _id: channelId });
   if (!channel) redirect("/channels");
 
-  const contentItems = (Array.isArray(channel.external_content) ? channel.external_content : []).map(
-    (item: { title?: string; url?: string; thumbnail_url?: string; published_date?: string }) => ({
-      title: item.title ?? "",
-      url: item.url ?? "",
-      thumbnail_url: item.thumbnail_url ?? null,
-      published_date: item.published_date ?? null,
-    })
-  );
+  const rawContent = await db
+    .collection("external_content")
+    .find({ external_content_channel_id: channelId })
+    .sort({ published_date: -1 })
+    .toArray();
+
+  const contentItems = rawContent.map((item) => ({
+    title: (item.title as string) ?? "",
+    url: (item.url as string) ?? "",
+    thumbnail: (item.thumbnail as string) ?? null,
+    published_date: (item.published_date as string) ?? null,
+  }));
 
   return (
     <ChannelDetailPage
