@@ -9,7 +9,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 interface ContentItem {
   title: string;
   url: string;
-  thumbnail: string | null;
+  thumbnail_url: string | null;
   published_date: string | null;
 }
 
@@ -58,11 +58,11 @@ function ContentCard({ item, channelName, onPlay }: { item: ContentItem; channel
     >
       <div
         className="w-full aspect-video flex items-center justify-center relative"
-        style={{ backgroundColor: item.thumbnail ? undefined : color + "22" }}
+        style={{ backgroundColor: item.thumbnail_url ? undefined : color + "22" }}
       >
-        {item.thumbnail ? (
+        {item.thumbnail_url ? (
           <>
-            <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
+            <img src={item.thumbnail_url} alt={item.title} className="w-full h-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
               <div className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full p-3 bg-black/50">
                 <Play className="size-6 text-white fill-white" />
