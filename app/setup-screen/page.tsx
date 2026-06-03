@@ -89,7 +89,7 @@ export default async function SetupScreenPage() {
           <div>
             <h2 className="font-semibold">Add Some Content</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              If you haven&apos;t already, upload content to the <a href="/content-library" className="text-primary underline">content library</a>, then create a
+              If you haven&apos;t already, upload content to the <a href="/content" className="text-primary underline">content library</a>, then create a
               playlist. Once you&apos;ve created a <a href="/playlists" className="text-primary underline">playlist</a>, assign it to your new screen and you&apos;re all set!
             </p>
           </div>
