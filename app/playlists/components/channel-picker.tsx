@@ -17,6 +17,8 @@ const MAX_CHANNELS = 3;
 export interface ExternalChannel {
   _id: string;
   name: string;
+  thumbnail: string | null;
+  content_count: number;
 }
 
 interface ChannelPickerProps {
@@ -70,7 +72,7 @@ export function ChannelPicker({
           </p>
         </DialogHeader>
 
-        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+        <div className="flex flex-col gap-1">
           {channels.map((channel) => {
             const isAlready = alreadySelected.includes(channel.name);
             const isPending = pendingNames.includes(channel.name);
@@ -82,36 +84,30 @@ export function ChannelPicker({
                 disabled={isAlready}
                 onClick={() => toggleChannel(channel.name)}
                 className={[
-                  "group relative rounded-md overflow-hidden border-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  "flex items-center gap-3 rounded-md border-2 p-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   isAlready
                     ? "cursor-default opacity-60 border-border"
                     : isPending
                     ? "border-primary"
-                    : "border-transparent hover:border-border",
+                    : "border-transparent hover:border-border hover:bg-muted/50",
                 ].join(" ")}
               >
-                <div className="aspect-video relative bg-muted rounded-sm">
-                  <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative size-10 shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center">
+                  {channel.thumbnail ? (
+                    <img src={channel.thumbnail} alt={channel.name} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
                     <Tv className="size-4 text-muted-foreground" />
-                  </div>
-
-                  {isAlready && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <div className="rounded-full bg-primary p-1">
-                        <CheckIcon className="size-4 text-primary-foreground" />
-                      </div>
-                    </div>
-                  )}
-
-                  {isPending && !isAlready && (
-                    <div className="absolute top-1.5 right-1.5">
-                      <div className="rounded-full bg-primary p-0.5">
-                        <CheckIcon className="size-3 text-primary-foreground" />
-                      </div>
-                    </div>
                   )}
                 </div>
-                <p className="px-1 py-1 text-xs font-medium truncate leading-tight">{channel.name}</p>
+                <span className="flex-1 text-sm font-medium">
+                  {channel.name}{" "}
+                  <span className="text-muted-foreground font-normal">({channel.content_count})</span>
+                </span>
+                {(isAlready || isPending) && (
+                  <div className={`rounded-full p-0.5 shrink-0 ${isAlready ? "bg-muted-foreground" : "bg-primary"}`}>
+                    <CheckIcon className="size-3 text-primary-foreground" />
+                  </div>
+                )}
               </button>
             );
           })}
