@@ -55,7 +55,7 @@ export default async function NewPlaylistPage() {
   }));
 
   const rawChannels = await db
-    .collection("external_channels")
+    .collection("external_content_channels")
     .find({})
     .sort({ name: 1 })
     .toArray();

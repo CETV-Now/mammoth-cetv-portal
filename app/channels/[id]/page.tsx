@@ -26,7 +26,7 @@ export default async function ChannelDetailRoute({ params }: { params: Promise<{
     redirect("/channels");
   }
 
-  const channel = await db.collection("external_channels").findOne({ _id: channelId });
+  const channel = await db.collection("external_content_channels").findOne({ _id: channelId });
   if (!channel) redirect("/channels");
 
   const contentItems = (Array.isArray(channel.external_content) ? channel.external_content : []).map(

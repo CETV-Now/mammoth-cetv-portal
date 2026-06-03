@@ -11,7 +11,7 @@ export async function GET() {
   const db = client.db(process.env.MONGODB_DB);
 
   const channels = await db
-    .collection("external_channels")
+    .collection("external_content_channels")
     .find({})
     .sort({ name: 1 })
     .toArray();

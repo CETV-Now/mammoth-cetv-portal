@@ -98,7 +98,7 @@ export default async function EditPlaylistPage({
   const assignedScreenIds = assignedScreenDocs.map((s) => s._id.toString());
 
   const rawChannels = await db
-    .collection("external_channels")
+    .collection("external_content_channels")
     .find({})
     .sort({ name: 1 })
     .toArray();
