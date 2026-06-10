@@ -324,6 +324,9 @@ const widgetOptions = [
   { id: "image" as WidgetType, name: "Image / Rotating Images", description: "Display 1–4 images that rotate automatically.", icon: <ImageIcon className="size-5 text-muted-foreground" /> },
 ];
 
+// Scrolling Text is hidden until the player supports it; remove this filter to restore it.
+const visibleWidgetOptions = widgetOptions.filter((w) => w.id !== "scrolling-text");
+
 interface WidgetZoneProps {
   label: string; description: string;
   selectedWidget: WidgetType | null; onSelectWidget: (w: WidgetType) => void;
@@ -348,7 +351,7 @@ function WidgetZoneConfig(props: WidgetZoneProps) {
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        {widgetOptions.map((widget) => {
+        {visibleWidgetOptions.map((widget) => {
           const isSelected = selectedWidget === widget.id;
           return (
             <button key={widget.id} type="button" onClick={() => onSelectWidget(widget.id)} className={cn("flex flex-col gap-2 rounded-lg border-2 p-3 text-left transition-colors", isSelected ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40")}>

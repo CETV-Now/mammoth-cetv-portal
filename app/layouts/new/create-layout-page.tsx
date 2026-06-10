@@ -116,6 +116,9 @@ const widgetOptions: WidgetOption[] = [
   },
 ];
 
+// Scrolling Text is hidden until the player supports it; remove this filter to restore it.
+const visibleWidgetOptions = widgetOptions.filter((w) => w.id !== "scrolling-text");
+
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
 const stepLabels: Record<Step, string> = { 1: "Template", 2: "Configure", 3: "Details" };
@@ -547,7 +550,7 @@ function WidgetZoneConfig(props: WidgetZoneProps) {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        {widgetOptions.map((widget) => {
+        {visibleWidgetOptions.map((widget) => {
           const isSelected = selectedWidget === widget.id;
           return (
             <button

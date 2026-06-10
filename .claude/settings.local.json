@@ -5,7 +5,11 @@
       "Bash(mkdir -p \"/Users/ben/Documents/cetv-now/mammoth-stack/mammoth-cetv-portal/app/sign-up/[[...sign-up]]\")",
       "Bash(npm install *)",
       "Bash(npx shadcn@latest *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"TSC-EXIT:$?\")",
+      "Bash(npx eslint *)"
     ]
   }
 }
