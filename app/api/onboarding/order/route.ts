@@ -55,7 +55,14 @@ export async function POST(req: Request) {
     // but we still use findOneAndUpdate so both types go through one round-trip
     // and we get the document back to read its type.
     const promoCode = await db.collection("promo_codes").findOneAndUpdate(
-      { _id: promoObjectId, status: "active" },
+      {
+        _id: promoObjectId,
+        status: "active",
+        $or: [
+          { type: "one_time_use" },
+          { used_by_account_ids: { $ne: user.account_id } },
+        ],
+      },
       [
         {
           $set: {
@@ -69,6 +76,18 @@ export async function POST(req: Request) {
 
     if (!promoCode) {
       return Response.json({ error: "Promo code is no longer available" }, { status: 400 });
+    }
+
+    if (promoCode.type === "one_time_use") {
+      await db.collection("promo_codes").updateOne(
+        { _id: promoObjectId },
+        { $set: { used_by_account_id: user.account_id, used_at: now } }
+      );
+    } else {
+      await db.collection("promo_codes").updateOne(
+        { _id: promoObjectId },
+        { $addToSet: { used_by_account_ids: user.account_id } }
+      );
     }
 
     await db.collection("device_orders").insertOne({

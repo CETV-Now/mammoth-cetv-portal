@@ -32,6 +32,7 @@ export async function POST(req: Request) {
   await clerk.users.updateUser(userId, { firstName, lastName });
 
   const accountUpdate: Record<string, unknown> = {
+    name: companyName,
     companyName,
     phone,
     website,

@@ -160,7 +160,7 @@ function OrderForm({ locationData, alwaysCharge }: { locationData: LocationData;
 
       {!alwaysCharge && (
         <p className="text-sm text-muted-foreground">
-          We will not charge you for the device if you activate within 15 days of receiving it and keep it online for 30 days.
+          We will not charge you for the device if you activate within 15 days of receiving it.
         </p>
       )}
 
