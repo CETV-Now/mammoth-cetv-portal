@@ -98,6 +98,7 @@ export async function POST(req: Request) {
       last_name: lastName,
       email,
       status: "active",
+      platform: "CETV",
       created_at: now,
       updated_at: now,
     });

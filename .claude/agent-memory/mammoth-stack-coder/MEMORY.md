@@ -1,2 +1,0 @@
-- [Portal Stack](portal-stack.md) — Next.js 16 / React 19 / Tailwind v4 / Clerk 6.36.2 / MongoDB / Stripe setup details
-- [Stripe Lazy Init](stripe-lazy-init.md) — Stripe must be lazy-initialized; module-level `new Stripe()` crashes build when STRIPE_SECRET_KEY is empty
