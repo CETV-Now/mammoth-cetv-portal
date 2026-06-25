@@ -21,9 +21,16 @@ const staticSteps = [
   },
 ];
 
-export default async function SetupScreenPage() {
+export default async function SetupScreenPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
+
+  const params = await searchParams;
+  const fromOnboarding = params.welcome === "1";
 
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB);
@@ -49,9 +56,13 @@ export default async function SetupScreenPage() {
   return (
     <div className="flex flex-1 flex-col py-12 px-6 max-w-2xl mx-auto w-full">
       <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight">Ready to setup a screen?</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {fromOnboarding ? "Welcome to CETV Now!" : "Ready to setup a screen?"}
+        </h1>
         <p className="mt-3 text-muted-foreground leading-relaxed">
-          Follow the steps below to get your screen up and running.
+          {fromOnboarding
+            ? "When you receive your device return to this page and follow the steps below."
+            : "Follow the steps below to get your screen up and running."}
         </p>
       </div>
 

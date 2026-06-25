@@ -135,7 +135,7 @@ function OrderForm({ locationData, alwaysCharge }: { locationData: LocationData;
 
       ph?.capture("onboarding_completed", { used_promo: hasPromo });
       toast.success("Order placed! Your device is on the way.");
-      window.location.href = "/dashboard";
+      window.location.href = "/setup-screen?welcome=1";
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
