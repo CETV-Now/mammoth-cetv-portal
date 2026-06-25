@@ -15,9 +15,18 @@ export async function POST(req: Request) {
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB);
 
+  const user = await db.collection("users").findOne({ clerk_user_id: userId });
+  if (!user) {
+    return Response.json({ error: "User not found" }, { status: 404 });
+  }
+
   const promoCode = await db.collection("promo_codes").findOne({
     code: normalizedCode,
     status: "active",
+    $or: [
+      { type: "one_time_use" },
+      { used_by_account_ids: { $ne: user.account_id } },
+    ],
   });
 
   if (!promoCode) {

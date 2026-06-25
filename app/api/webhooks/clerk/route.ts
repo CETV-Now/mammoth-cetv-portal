@@ -85,6 +85,8 @@ export async function POST(req: Request) {
       stripeCustomerId: null,
       onboardingStep: 1,
       onboardingComplete: false,
+      status: "active",
+      platform: "CETV",
       created_at: now,
       updated_at: now,
     });
@@ -98,6 +100,7 @@ export async function POST(req: Request) {
       last_name: lastName,
       email,
       status: "active",
+      platform: "CETV",
       created_at: now,
       updated_at: now,
     });
