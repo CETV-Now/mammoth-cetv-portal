@@ -1,14 +1,28 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, type MongoClientOptions } from "mongodb";
 
-if (!process.env.MONGODB_URI) {
+const uri = process.env.MONGODB_URI?.trim();
+if (!uri) {
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
 }
 
-const uri = process.env.MONGODB_URI;
-const options = {
+if (!/^mongodb(?:\+srv)?:\/\//.test(uri)) {
+  throw new Error('Invalid environment variable: "MONGODB_URI" must be a MongoDB connection string');
+}
+
+const dbName = process.env.MONGODB_DB?.trim();
+if (!dbName) {
+  throw new Error('Invalid/Missing environment variable: "MONGODB_DB"');
+}
+
+const options: MongoClientOptions = {
   maxPoolSize: 10,
-  serverSelectionTimeoutMS: 10000,
+  minPoolSize: 2,
+  maxConnecting: 2,
+  serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
+  waitQueueTimeoutMS: 5000,
+  retryReads: true,
+  retryWrites: true,
 };
 
 let client: MongoClient;
