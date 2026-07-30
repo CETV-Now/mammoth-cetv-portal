@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Construct the exact S3 hostname from env vars so next/image only proxies
 // images from the CETV bucket over HTTPS.
@@ -51,4 +52,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "cctv-now-llc",
+  project: "cetv-asds",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  disableLogger: true,
+});

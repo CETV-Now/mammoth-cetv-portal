@@ -23,6 +23,7 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@sentry/nextjs": "^10.69.0",
     "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^5.8.0",
     "@trigger.dev/sdk": "^4.4.5",
