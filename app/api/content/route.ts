@@ -115,6 +115,14 @@ export async function POST(req: Request) {
     }
   }
 
+  if (mimeType === "image/jpeg" || mimeType === "image/png") {
+    try {
+      await tasks.trigger("optimize-user-content-image", { contentId: result.insertedId.toString() });
+    } catch (err) {
+      console.error("[optimize-user-content-image] trigger failed:", err);
+    }
+  }
+
   const isVideo = mimeType === "video/mp4";
 
   return Response.json({

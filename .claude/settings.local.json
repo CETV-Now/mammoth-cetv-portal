@@ -7,5 +7,9 @@
       "Bash(npx shadcn@latest *)",
       "Bash(npx tsc *)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "codegraph",
+    "sentry"
+  ]
 }
