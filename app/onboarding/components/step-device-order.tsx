@@ -155,10 +155,10 @@ function OrderForm({ locationData, alwaysCharge }: { locationData: LocationData;
 
       <div className="rounded-md border bg-muted/50 px-4 py-3 flex items-center justify-between text-sm">
         <span className="text-muted-foreground">CETV Device (1×)</span>
-        <span className="font-semibold">{devicePriceDisplay}</span>
+        <span className="font-semibold">{hasPromo ? "$0.00" : devicePriceDisplay}</span>
       </div>
 
-      {!alwaysCharge && (
+      {!alwaysCharge && !hasPromo && (
         <p className="text-sm text-muted-foreground">
           We will not charge you for the device if you activate within 15 days of receiving it.
         </p>
