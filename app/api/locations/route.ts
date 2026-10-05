@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
+import { parseCoordinates, toGeoPoint } from "@/lib/coordinates";
 import { generateInstallCode } from "@/lib/installCode";
 
 export async function POST(req: Request) {
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { name, screen_name, address, city, state, zip, lat, long, geo_point, audio_enabled } = body;
+  const { name, screen_name, address, city, state, zip, lat, long, audio_enabled } = body;
 
   if (!name) {
     return Response.json({ error: "Location name is required" }, { status: 400 });
@@ -18,6 +19,11 @@ export async function POST(req: Request) {
   if (!screen_name) {
     return Response.json({ error: "Screen name is required" }, { status: 400 });
   }
+  const parsed = parseCoordinates(lat, long);
+  if ("error" in parsed) {
+    return Response.json({ error: parsed.error }, { status: 400 });
+  }
+  const coords = parsed.coords;
 
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB);
@@ -49,9 +55,9 @@ export async function POST(req: Request) {
     locationDoc.city = city;
     locationDoc.state = state;
     locationDoc.zip = zip;
-    locationDoc.lat = lat;
-    locationDoc.long = long;
-    locationDoc.geo_point = geo_point;
+    locationDoc.lat = coords?.lat ?? null;
+    locationDoc.long = coords?.long ?? null;
+    if (coords) locationDoc.geo_point = toGeoPoint(coords);
   }
 
   const newLocation = await db.collection("locations").insertOne(locationDoc);

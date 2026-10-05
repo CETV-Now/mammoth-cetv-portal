@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
+import { parseCoordinates, toGeoPoint } from "@/lib/coordinates";
 import { generateInstallCode } from "@/lib/installCode";
 
 export async function POST(req: Request) {
@@ -10,11 +11,16 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { name, address, city, state, zip, lat, long, geo_point, audio_enabled } = body;
+  const { name, address, city, state, zip, lat, long, audio_enabled } = body;
 
   if (!name || !address) {
     return Response.json({ error: "Name and address are required" }, { status: 400 });
   }
+  const parsed = parseCoordinates(lat, long);
+  if ("error" in parsed) {
+    return Response.json({ error: parsed.error }, { status: 400 });
+  }
+  const coords = parsed.coords;
 
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB);
@@ -43,9 +49,9 @@ export async function POST(req: Request) {
           city: city,
           state: state,
           zip: zip,
-          lat: lat,
-          long: long,
-          geo_point: geo_point,
+          lat: coords?.lat ?? null,
+          long: coords?.long ?? null,
+          ...(coords ? { geo_point: toGeoPoint(coords) } : {}),
           created_at: now,
           updated_at: now,
           tag: "CETVNEWTESTING",
