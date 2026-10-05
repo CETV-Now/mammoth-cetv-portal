@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
+import { parseCoordinates, toGeoPoint } from "@/lib/coordinates";
 
 export async function GET(
   _req: Request,
@@ -66,11 +67,16 @@ export async function PATCH(
   }
 
   const body = await req.json();
-  const { name, address, city, state, zip, lat, long, geo_point } = body;
+  const { name, address, city, state, zip, lat, long } = body;
 
   if (!name) {
     return Response.json({ error: "name is required" }, { status: 400 });
   }
+  const parsed = parseCoordinates(lat, long);
+  if ("error" in parsed) {
+    return Response.json({ error: parsed.error }, { status: 400 });
+  }
+  const coords = parsed.coords;
 
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB);
@@ -92,18 +98,23 @@ export async function PATCH(
   const now = new Date();
 
   const update: Record<string, unknown> = { name, updated_at: now };
+  const unset: Record<string, ""> = {};
 
   if (address !== undefined) {
     update.address = address;
     update.city = city;
     update.state = state;
     update.zip = zip;
-    update.lat = lat;
-    update.long = long;
-    update.geo_point = geo_point;
+    update.lat = coords?.lat ?? null;
+    update.long = coords?.long ?? null;
+    if (coords) update.geo_point = toGeoPoint(coords);
+    else unset.geo_point = "";
   }
 
-  await db.collection("locations").updateOne({ _id: locationId }, { $set: update });
+  await db.collection("locations").updateOne(
+    { _id: locationId },
+    { $set: update, ...(Object.keys(unset).length ? { $unset: unset } : {}) }
+  );
 
   // Keep location_name in sync on all screens for this location
   if (name !== location.name) {
